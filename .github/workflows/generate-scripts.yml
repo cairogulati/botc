@@ -1,0 +1,74 @@
+name: Generate Scripts List
+
+on:
+  push:
+    paths:
+      - "scripts/**"
+      - "current-script.txt"
+      - ".github/workflows/generate-scripts.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate scripts.json
+        run: |
+          mkdir -p data
+
+          CURRENT=$(cat current-script.txt | tr -d '\r\n')
+
+          echo "[" > data/scripts.json
+
+          FIRST=true
+
+          find scripts -type f \( \
+            -iname "*.jpg" -o \
+            -iname "*.jpeg" -o \
+            -iname "*.png" -o \
+            -iname "*.webp" \) | sort | while read FILE
+          do
+
+            NAME=$(basename "$FILE")
+            TITLE=$(basename "$FILE" | sed 's/\.[^.]*$//' | sed 's/-/ /g' | sed -E 's/\b(.)/\U\1/g')
+
+            if [ "$NAME" = "$CURRENT" ]; then
+              CURRENT_FLAG=true
+            else
+              CURRENT_FLAG=false
+            fi
+
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              echo "," >> data/scripts.json
+            fi
+
+            echo "  {" >> data/scripts.json
+            echo "    \"title\": \"$TITLE\"," >> data/scripts.json
+            echo "    \"file\": \"$FILE\"," >> data/scripts.json
+            echo "    \"current\": $CURRENT_FLAG" >> data/scripts.json
+            echo -n "  }" >> data/scripts.json
+
+          done
+
+          echo "" >> data/scripts.json
+          echo "]" >> data/scripts.json
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add data/scripts.json
+
+          git diff --cached --quiet || (
+            git commit -m "Auto-generate scripts.json"
+            git push
+          )
