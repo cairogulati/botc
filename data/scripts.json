@@ -1,3 +1,12 @@
 [
-
+  {
+    "title": "One Yes Is Enough",
+    "file": "scripts/One-yes-is-enough.png",
+    "current": false
+  },
+  {
+    "title": "Trouble Brewing Reforged",
+    "file": "scripts/Trouble-Brewing-Reforged.png",
+    "current": false
+  }
 ]
