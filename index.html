@@ -2,208 +2,336 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Companion app for Blood on the Clocktower — learn the rules, browse scripts, and prep for game night.">
+<meta name="theme-color" content="#0f1118">
 <title>BOTC Companion</title>
-<style>
-:root{--bg:#11131b;--card:#1b2030;--gold:#d9b24c;--red:#9d2235;--text:#eee}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
-header{padding:18px;text-align:center;background:#171a25;border-bottom:1px solid #333;position:sticky;top:0}
-h1{margin:0;color:var(--gold)}
-.page{display:none;padding:20px 18px 90px;max-width:900px;margin:auto}
-.page.active{display:block}
-.card{background:var(--card);padding:18px;border-radius:14px;margin:14px 0}
-.button{display:inline-block;background:var(--red);color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none}
-.bottom{position:fixed;bottom:0;left:0;right:0;background:#171a25;border-top:1px solid #333;display:flex}
-.bottom button{flex:1;background:none;border:none;color:#ddd;padding:12px;font-size:15px}
-.bottom button.active{color:var(--gold)}
-details{background:#242b3d;margin:10px 0;padding:12px;border-radius:10px}
-ul{line-height:1.7}
-.script{padding:14px;background:#242b3d;border-radius:10px;margin:10px 0;cursor:pointer}
-.small{color:#bbb}
-
-.modal{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.9);
-    display:none;
-    justify-content:center;
-    align-items:center;
-}
-
-.modal.show{
-    display:flex;
-}
-
-.modal img{
-    max-width:95%;
-    max-height:95%;
-    border-radius:10px;
-}
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 
-<header>
-<h1>🎭 BOTC Companion</h1>
-<div class="small">Blood on the Clocktower</div>
+<div class="app-shell">
+
+<header class="site-header">
+  <div class="brand">
+    <h1 class="brand-title">BOTC Companion</h1>
+    <p class="brand-sub">Blood on the Clocktower</p>
+  </div>
 </header>
 
+<!-- Home -->
 <div id="home" class="page active">
-<div class="card">
-<h2>Welcome!</h2>
-<p>Blood on the Clocktower is a social deduction game where every player has a unique ability, private conversations are encouraged, and even dead players remain part of the game.</p>
-<a class="button" href="#" onclick="show('learn')">Learn the Game</a>
+
+  <section class="hero">
+    <p class="hero-eyebrow">Game Night Prep</p>
+    <h2>Deception, deduction &amp; drama at the clocktower</h2>
+    <p>Every player has a secret role. Trust no one, question everything, and remember — even the dead still have a vote.</p>
+    <div class="btn-row" style="justify-content:center">
+      <button class="btn btn-primary" onclick="show('learn')">Learn the Game</button>
+      <button class="btn btn-ghost" onclick="show('scripts')">Browse Scripts</button>
+    </div>
+  </section>
+
+  <section class="card featured-script">
+    <div class="featured-thumb" id="featured-thumb" title="Tap to open script">
+      <div class="thumb-placeholder">📜</div>
+    </div>
+    <div class="featured-body">
+      <h2>Tonight's Script</h2>
+      <p class="featured-title" id="currentName">Loading…</p>
+      <p>Skim the script before you arrive. You don't need to memorize every role — the Storyteller will walk everyone through the important bits.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="open-current-btn" onclick="openCurrentScript()">Open Script</button>
+        <button class="btn btn-ghost" id="open-current-json-btn" onclick="openCurrentGrimoire()">Grimoire JSON</button>
+        <button class="btn btn-ghost" onclick="show('scripts')">All Scripts</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="quick-grid">
+    <button class="quick-btn" onclick="show('learn')">
+      <span class="icon">📖</span>
+      <span>Learn</span>
+    </button>
+    <button class="quick-btn" onclick="show('scripts')">
+      <span class="icon">📜</span>
+      <span>Scripts</span>
+    </button>
+    <button class="quick-btn" onclick="show('faq')">
+      <span class="icon">❓</span>
+      <span>FAQ</span>
+    </button>
+  </div>
+
+  <section class="card player-setup-card">
+    <h2>Players Tonight</h2>
+    <p class="setup-lead">How many are playing? Tap a number for the standard role split.</p>
+    <div class="player-picker" role="group" aria-label="Number of players"></div>
+    <div class="setup-stats"></div>
+  </section>
+
 </div>
 
-<div class="card">
-<h2>📜 Today's Script</h2>
-<h3 id="currentName">Loading...</h3>
-<p>Read the script before the meetup. You don't need to memorize every role—the Storyteller will explain anything important before the game starts.</p>
-<a class="button" href="#" onclick="show('scripts')">Open Scripts</a>
-</div>
-</div>
-
+<!-- Learn -->
 <div id="learn" class="page">
-<h2>📖 Learn</h2>
+  <h2 class="page-heading">Learn the Game</h2>
+  <p class="page-lead">A quick guide for first-timers and returning players.</p>
 
-<div class="card">
-<h3>🎭 What is BOTC?</h3>
-<p>Good players must find and execute the Demon. Evil players protect the Demon while spreading misinformation.</p>
+  <div class="teams">
+    <div class="team-card good">
+      <h3><span class="badge badge-good">Good</span></h3>
+      <p>Find and execute the Demon before evil wins.</p>
+    </div>
+    <div class="team-card evil">
+      <h3><span class="badge badge-evil">Evil</span></h3>
+      <p>Protect the Demon and sow confusion until only two players remain.</p>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-icon">🌙</div>
+      <div>
+        <h3>Night</h3>
+        <p>Everyone closes their eyes. The Storyteller wakes characters in order and resolves their abilities in secret.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-icon">☀️</div>
+      <div>
+        <h3>Day</h3>
+        <p>Open discussion. Share (or fake) information, form alliances, and hold private side conversations.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-icon">🗳️</div>
+      <div>
+        <h3>Nominations &amp; Voting</h3>
+        <p>Any living player can nominate someone for execution. Everyone votes — usually only one execution per day.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-icon">💀</div>
+      <div>
+        <h3>Death</h3>
+        <ul>
+          <li>Dead players keep talking.</li>
+          <li>Dead players still help their team.</li>
+          <li>Each dead player gets one Ghost Vote.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-icon">🏆</div>
+      <div>
+        <h3>Winning</h3>
+        <p><strong>Good</strong> wins by executing the Demon. <strong>Evil</strong> wins if the Demon survives until only two players are left.</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="card player-setup-card">
+    <h3>Setup by Player Count</h3>
+    <p class="setup-lead">Standard Blood on the Clocktower setup — always 1 Demon. Pick your group size:</p>
+    <div class="player-picker" role="group" aria-label="Number of players"></div>
+    <div class="setup-stats"></div>
+
+    <details class="setup-table-details">
+      <summary>Full setup table (5–15 players)</summary>
+      <div class="setup-table-wrap">
+        <table class="setup-table">
+          <thead>
+            <tr>
+              <th>Players</th>
+              <th>Townsfolk</th>
+              <th>Outsiders</th>
+              <th>Minions</th>
+              <th>Demon</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-players="5"><td>5</td><td>3</td><td>0</td><td>1</td><td>1</td></tr>
+            <tr data-players="6"><td>6</td><td>3</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr data-players="7"><td>7</td><td>5</td><td>0</td><td>1</td><td>1</td></tr>
+            <tr data-players="8"><td>8</td><td>5</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr data-players="9"><td>9</td><td>5</td><td>2</td><td>1</td><td>1</td></tr>
+            <tr data-players="10"><td>10</td><td>7</td><td>0</td><td>2</td><td>1</td></tr>
+            <tr data-players="11"><td>11</td><td>7</td><td>1</td><td>2</td><td>1</td></tr>
+            <tr data-players="12"><td>12</td><td>7</td><td>2</td><td>2</td><td>1</td></tr>
+            <tr data-players="13"><td>13</td><td>9</td><td>0</td><td>3</td><td>1</td></tr>
+            <tr data-players="14"><td>14</td><td>9</td><td>1</td><td>3</td><td>1</td></tr>
+            <tr data-players="15"><td>15</td><td>9</td><td>2</td><td>3</td><td>1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <div class="card">
+    <h3>Before You Arrive</h3>
+    <ul>
+      <li>Read tonight's script once.</li>
+      <li>Don't stress about memorizing roles.</li>
+      <li>Ask the Storyteller anything you're unsure about.</li>
+      <li>Have fun — lying is encouraged.</li>
+    </ul>
+  </div>
 </div>
 
-<div class="card">
-<h3>🌙 Night</h3>
-<p>Everyone closes their eyes. The Storyteller wakes characters in order and resolves abilities.</p>
-</div>
-
-<div class="card">
-<h3>☀️ Day</h3>
-<p>Discuss, bluff, share information, accuse players and hold private conversations.</p>
-</div>
-
-<div class="card">
-<h3>🗳️ Nominations & Voting</h3>
-<p>Players nominate someone for execution. Everyone may vote. Usually only one execution happens each day.</p>
-</div>
-
-<div class="card">
-<h3>💀 Death</h3>
-<ul>
-<li>Dead players still talk.</li>
-<li>Dead players still help their team.</li>
-<li>Each dead player has one Ghost Vote.</li>
-</ul>
-</div>
-
-<div class="card">
-<h3>🏆 Winning</h3>
-<p><b>Good:</b> Execute the Demon.</p>
-<p><b>Evil:</b> Keep the Demon alive until only two players remain.</p>
-</div>
-
-<div class="card">
-<h3>🎒 Before You Arrive</h3>
-<ul>
-<li>Read today's script.</li>
-<li>Don't worry about memorizing.</li>
-<li>Ask questions.</li>
-<li>Have fun!</li>
-</ul>
-</div>
-</div>
-
+<!-- Scripts -->
 <div id="scripts" class="page">
-<h2>📜 Scripts</h2>
+  <h2 class="page-heading">Scripts</h2>
+  <p class="page-lead">Tonight: <strong id="currentScriptLabel">Loading…</strong></p>
 
-<div class="script"><strong>⭐ Today's Script</strong><br><span id="currentScriptLabel"></span></div>
+  <div class="scripts-toolbar">
+    <label class="sr-only" for="script-search">Search scripts</label>
+    <input type="search" id="script-search" class="search-input" placeholder="Search scripts…" autocomplete="off">
+  </div>
 
+  <div class="card json-help">
+    <h3>Grimoire JSON</h3>
+    <p>Add a <code>.json</code> file in <code>scripts/</code> with the same name as the script image, then push to GitHub. The site loads it automatically — nothing is uploaded through the UI.</p>
+    <p class="json-help-sub">Format: an array with a <code>_meta</code> object first, then role ids — e.g. <code>[{"id":"_meta","author":"…","name":"…"},"chef","imp",…]</code></p>
+  </div>
+
+  <div id="script-list" class="script-grid"></div>
+
+  <div id="scripts-empty" class="empty-state hidden">
+    <div class="icon">📜</div>
+    <p>No scripts found. Add images to the <code>scripts/</code> folder and push to GitHub.</p>
+  </div>
 </div>
 
-<div id="script-list"></div>
-
-<div id="script-modal" class="modal">
-    <span onclick="closeScript()">✕</span>
-    <img id="script-image">
-</div>
-
+<!-- FAQ -->
 <div id="faq" class="page">
-<h2>❓ FAQ</h2>
-<details><summary>Can I lie?</summary><p>Yes. Everyone can lie.</p></details>
-<details><summary>Do I stop playing after I die?</summary><p>No. You stay in the game and receive one Ghost Vote.</p></details>
-<details><summary>Do I need to know every role?</summary><p>No. Read the script once and the Storyteller will explain the rest.</p></details>
-<details><summary>Can I have private conversations?</summary><p>Yes, and they're a big part of the game.</p></details>
+  <h2 class="page-heading">FAQ</h2>
+  <p class="page-lead">Common questions from new players.</p>
+
+  <div class="faq-list">
+    <details>
+      <summary>Can I lie?</summary>
+      <p>Yes — everyone can lie, including about their role and the information they share. That's core to the game.</p>
+    </details>
+    <details>
+      <summary>Do I stop playing after I die?</summary>
+      <p>No. You stay in the game, keep talking, and get one Ghost Vote you can use on any future execution.</p>
+    </details>
+    <details>
+      <summary>Do I need to know every role?</summary>
+      <p>No. Skim the script once before game night. The Storyteller will explain anything unusual before play starts.</p>
+    </details>
+    <details>
+      <summary>Can I have private conversations?</summary>
+      <p>Absolutely — whispering and pulling people aside is a big part of the game. Just don't leave the room.</p>
+    </details>
+    <details>
+      <summary>What does the Storyteller do?</summary>
+      <p>The Storyteller runs the game — waking roles at night, resolving abilities, and keeping everything fair and fun.</p>
+    </details>
+    <details>
+      <summary>How long does a game take?</summary>
+      <p>Usually 1–2 hours depending on player count and how much everyone talks. Plan for a full evening.</p>
+    </details>
+  </div>
 </div>
 
+<!-- More -->
 <div id="more" class="page">
-<h2>⚙️ More</h2>
-<div class="card">
-<p><b>Future features</b></p>
-<ul>
-<li>Character Encyclopedia</li>
-<li>Automatic Script Browser</li>
-<li>Storyteller Tools</li>
-<li>Offline PWA</li>
-<li>Search</li>
-</ul>
-</div>
+  <h2 class="page-heading">More</h2>
+  <p class="page-lead">What's coming next.</p>
+
+  <div class="card">
+    <h3>Roadmap</h3>
+    <ul class="roadmap">
+      <li><span class="dot done"></span> Script &amp; grimoire JSON</li>
+      <li><span class="dot done"></span> Player count setup</li>
+      <li><span class="dot"></span> Storyteller tools</li>
+      <li><span class="dot"></span> Offline PWA support</li>
+      <li><span class="dot"></span> Role search &amp; filters</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>About</h3>
+    <p>A lightweight companion for our Blood on the Clocktower group. Hosted on GitHub Pages — no app install needed.</p>
+  </div>
 </div>
 
-<nav class="bottom">
-<button class="active" onclick="show('home',this)">🏠<br>Home</button>
-<button onclick="show('learn',this)">📖<br>Learn</button>
-<button onclick="show('scripts',this)">📜<br>Scripts</button>
-<button onclick="show('faq',this)">❓<br>FAQ</button>
-<button onclick="show('more',this)">⚙️<br>More</button>
+</div><!-- /.app-shell -->
+
+<!-- Script viewer modal -->
+<div id="script-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-title">Script</h2>
+      <button class="modal-close" onclick="closeScriptModal()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="modal-tabs" role="tablist">
+      <button class="modal-tab active" data-tab="sheet" onclick="switchScriptTab('sheet')">Script sheet</button>
+      <button class="modal-tab" data-tab="json" onclick="switchScriptTab('json')">Grimoire JSON</button>
+    </div>
+
+    <div id="modal-sheet" class="modal-body modal-pane active">
+      <img id="script-image" alt="Script sheet">
+    </div>
+
+    <div id="modal-json" class="modal-body modal-pane">
+      <p class="json-pane-lead" id="json-source-label">Grimoire JSON from GitHub.</p>
+
+      <div id="json-empty" class="json-empty hidden">
+        <p>No grimoire JSON yet. Add <code>scripts/Your-Script.json</code> and push to GitHub.</p>
+      </div>
+
+      <div id="json-content" class="hidden">
+        <div id="json-meta" class="json-meta-card"></div>
+
+        <div class="json-setup-bar">
+          <p class="json-setup-label">Setup for <strong id="json-setup-count">10</strong> players</p>
+          <div class="player-picker player-picker-compact" role="group" aria-label="Number of players"></div>
+          <div class="setup-stats setup-stats-compact"></div>
+        </div>
+
+        <h3 class="json-roles-heading">Script roles</h3>
+        <ol id="json-roles" class="json-roles-list"></ol>
+        <h3 class="json-roles-heading">Raw JSON</h3>
+        <pre id="json-raw" class="json-raw"></pre>
+        <div class="json-actions">
+          <button class="btn btn-primary" id="copy-json-btn" onclick="copyGrimoireJson()">Copy JSON</button>
+        </div>
+      </div>
+
+      <p class="json-toast hidden" id="json-toast" role="status"></p>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav" aria-label="Main navigation">
+  <button class="active" data-page="home" onclick="show('home', this)">
+    <span class="nav-icon">🏠</span>
+    <span>Home</span>
+  </button>
+  <button data-page="learn" onclick="show('learn', this)">
+    <span class="nav-icon">📖</span>
+    <span>Learn</span>
+  </button>
+  <button data-page="scripts" onclick="show('scripts', this)">
+    <span class="nav-icon">📜</span>
+    <span>Scripts</span>
+  </button>
+  <button data-page="faq" onclick="show('faq', this)">
+    <span class="nav-icon">❓</span>
+    <span>FAQ</span>
+  </button>
+  <button data-page="more" onclick="show('more', this)">
+    <span class="nav-icon">⚙️</span>
+    <span>More</span>
+  </button>
 </nav>
 
-<script>
-function show(id,btn){
-document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-document.getElementById(id).classList.add('active');
-document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));
-if(btn) btn.classList.add('active');
-}
-fetch('current-script.txt').then(r=>r.text()).then(t=>{
-let n=t.trim().replace(/\.[^/.]+$/,'').replace(/-/g,' ').replace(/\b\w/g,m=>m.toUpperCase());
-document.getElementById('currentName').textContent=n;
-document.getElementById('currentScriptLabel').textContent=n;
-}).catch(()=>{
-document.getElementById('currentName').textContent='Configure current-script.txt';
-document.getElementById('currentScriptLabel').textContent='Configure current-script.txt';
-});
-
-async function loadScripts() {
-    const response = await fetch("data/scripts.json");
-    const scripts = await response.json();
-
-    const container = document.getElementById("script-list");
-
-    scripts.forEach(script => {
-        const card = document.createElement("div");
-        card.className = "script-card";
-
-        card.innerHTML = `
-            <h3>${script.title}</h3>
-            ${script.current ? "<span class='badge'>Today's Script</span>" : ""}
-        `;
-
-        card.onclick = () => openScript(script.file);
-
-        container.appendChild(card);
-    });
-}
-
-function openScript(file) {
-    document.getElementById("script-image").src = file;
-    document.getElementById("script-modal").classList.add("show");
-}
-
-function closeScript() {
-    document.getElementById("script-modal").classList.remove("show");
-}
-
-loadScripts();
-</script>
-
+<script src="js/app.js"></script>
 </body>
 </html>

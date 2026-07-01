@@ -2,7 +2,8 @@
   {
     "title": "One Yes Is Enough",
     "file": "scripts/One-yes-is-enough.png",
-    "current": false
+    "json": "scripts/One-yes-is-enough.json",
+    "current": true
   },
   {
     "title": "Trouble Brewing Reforged",
