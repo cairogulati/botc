@@ -36,6 +36,10 @@ const SETUP_MODIFIERS = {
   riot: { special: "Riot: all Minions are Riot." },
 };
 
+const GAME_DAYS = [3, 6]; // Wednesday, Saturday
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 const PLAYER_SETUP = {
   5: { townsfolk: 3, outsiders: 0, minions: 1, demon: 1 },
   6: { townsfolk: 3, outsiders: 1, minions: 1, demon: 1 },
@@ -58,6 +62,58 @@ function titleFromFilename(name) {
     .replace(/\.[^/.]+$/, "")
     .replace(/-/g, " ")
     .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function getGameSchedule(now = new Date()) {
+  const day = now.getDay();
+
+  if (GAME_DAYS.includes(day)) {
+    return {
+      isGameDay: true,
+      featuredHeading: "Tonight's Script",
+      scriptsLead: "Tonight",
+      badge: "Tonight",
+      playersHeading: "Players Tonight",
+    };
+  }
+
+  for (let i = 1; i <= 7; i++) {
+    const next = (day + i) % 7;
+    if (GAME_DAYS.includes(next)) {
+      const name = DAY_NAMES[next];
+      const short = DAY_SHORT[next];
+      return {
+        isGameDay: false,
+        daysUntil: i,
+        nextDayName: name,
+        featuredHeading: `${name}'s Script`,
+        scriptsLead: i === 1 ? "Tomorrow" : `Next up (${short})`,
+        badge: short,
+        playersHeading: i === 1 ? "Players Tomorrow" : `Players on ${name}`,
+      };
+    }
+  }
+
+  return {
+    isGameDay: false,
+    featuredHeading: "Upcoming Script",
+    scriptsLead: "Upcoming",
+    badge: "Next",
+    playersHeading: "Players",
+  };
+}
+
+function applyGameDayLabels() {
+  const schedule = getGameSchedule();
+  const heading = document.getElementById("featured-script-heading");
+  const leadPrefix = document.getElementById("scripts-lead-prefix");
+  const playersHeading = document.getElementById("players-heading");
+
+  if (heading) heading.textContent = schedule.featuredHeading;
+  if (leadPrefix) leadPrefix.textContent = schedule.scriptsLead;
+  if (playersHeading) playersHeading.textContent = schedule.playersHeading;
+
+  return schedule;
 }
 
 function loadCharacters() {
@@ -596,6 +652,8 @@ function renderScriptGrid(scripts) {
 
   empty.classList.add("hidden");
 
+  const schedule = getGameSchedule();
+
   scripts.forEach((script) => {
     const card = document.createElement("article");
     card.className = "script-card" + (script.current ? " current" : "");
@@ -618,7 +676,7 @@ function renderScriptGrid(scripts) {
     body.innerHTML = `
       <h3>${escapeHtml(script.title)}</h3>
       <div class="script-card-badges">
-        ${script.current ? '<span class="badge">Tonight</span>' : ""}
+        ${script.current ? `<span class="badge">${escapeHtml(schedule.badge)}</span>` : ""}
         ${script.json ? '<span class="badge badge-json">JSON</span>' : ""}
       </div>
       <div class="script-card-actions">
@@ -640,10 +698,39 @@ function renderScriptGrid(scripts) {
   });
 }
 
+function scriptMatchesQuery(script, q) {
+  if (script.title.toLowerCase().includes(q)) return true;
+  return (script.roles || []).some((r) => r.id.includes(q) || r.name.toLowerCase().includes(q));
+}
+
 function filterScripts(query) {
   const q = query.trim().toLowerCase();
-  const filtered = q ? allScripts.filter((s) => s.title.toLowerCase().includes(q)) : allScripts;
+  const filtered = q ? allScripts.filter((s) => scriptMatchesQuery(s, q)) : allScripts;
   renderScriptGrid(filtered);
+}
+
+async function enrichScriptsWithRoles() {
+  await Promise.all(
+    allScripts.map(async (script) => {
+      if (!script.json) {
+        script.roles = [];
+        return;
+      }
+      try {
+        const res = await fetch(script.json);
+        if (!res.ok) {
+          script.roles = [];
+          return;
+        }
+        const data = await res.json();
+        script.roles = Array.isArray(data)
+          ? data.filter((item) => typeof item === "string").map((id) => getCharacter(id))
+          : [];
+      } catch {
+        script.roles = [];
+      }
+    })
+  );
 }
 
 async function loadCurrentScript() {
@@ -676,6 +763,11 @@ async function loadScripts() {
     if (a.current !== b.current) return a.current ? -1 : 1;
     return a.title.localeCompare(b.title);
   });
+
+  await loadCharacters();
+  await enrichScriptsWithRoles();
+
+  applyGameDayLabels();
 
   renderFeatured(getCurrentScript());
   renderScriptGrid(allScripts);
