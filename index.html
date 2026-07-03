@@ -40,7 +40,7 @@
       <div class="thumb-placeholder">📜</div>
     </div>
     <div class="featured-body">
-      <h2>Tonight's Script</h2>
+      <h2 id="featured-script-heading">Tonight's Script</h2>
       <p class="featured-title" id="currentName">Loading…</p>
       <p>Skim the script before you arrive. You don't need to memorize every role — the Storyteller will walk everyone through the important bits.</p>
       <div class="btn-row">
@@ -67,7 +67,7 @@
   </div>
 
   <section class="card player-setup-card">
-    <h2>Players Tonight</h2>
+    <h2 id="players-heading">Players Tonight</h2>
     <p class="setup-lead">How many are playing? Tap a number for the standard role split.</p>
     <div class="player-picker" role="group" aria-label="Number of players"></div>
     <div class="setup-stats"></div>
@@ -184,7 +184,7 @@
 <!-- Scripts -->
 <div id="scripts" class="page">
   <h2 class="page-heading">Scripts</h2>
-  <p class="page-lead">Tonight: <strong id="currentScriptLabel">Loading…</strong></p>
+  <p class="page-lead"><span id="scripts-lead-prefix">Tonight</span>: <strong id="currentScriptLabel">Loading…</strong></p>
 
   <div class="scripts-toolbar">
     <label class="sr-only" for="script-search">Search scripts</label>
