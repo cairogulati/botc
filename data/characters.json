@@ -116,6 +116,7 @@
   "damsel": { "name": "Damsel", "team": "outsider" },
   "golem": { "name": "Golem", "team": "outsider" },
   "politician": { "name": "Politician", "team": "outsider" },
+  "zealot": { "name": "Zealot", "team": "outsider" },
   "widow": { "name": "Widow", "team": "minion" },
   "fearmonger": { "name": "Fearmonger", "team": "minion" },
   "psychopath": { "name": "Psychopath", "team": "minion" },
