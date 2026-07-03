@@ -1112,45 +1112,215 @@ details p {
   color: var(--gold);
 }
 
-.json-roles-list {
-  list-style: none;
+.json-roles {
   margin: 0 0 18px;
-  padding: 0;
   display: grid;
-  gap: 6px;
-  max-height: 200px;
-  overflow-y: auto;
+  gap: 12px;
 }
 
-.json-roles-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--surface-raised);
+.role-group {
   border: 1px solid var(--border);
-  font-size: 0.88rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  overflow: hidden;
 }
 
-.role-index {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+.role-group-head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  background: var(--gold-soft);
-  color: var(--gold);
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.role-group-team {
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.role-group-count {
+  min-width: 22px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
   font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.role-group-list {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.role-group-list li {
+  margin: 0;
+}
+
+.role-group-list code {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.role-group-townsfolk .role-group-head,
+.setup-result-townsfolk .setup-result-group-head {
+  border-color: rgba(61, 143, 116, 0.3);
+}
+.role-group-townsfolk .role-group-team,
+.setup-result-townsfolk .setup-result-team {
+  color: #6ecfae;
+}
+.role-group-outsider .role-group-team,
+.setup-result-outsider .setup-result-team {
+  color: #8eb4ff;
+}
+.role-group-minion .role-group-team,
+.role-group-demon .role-group-team,
+.setup-result-minion .setup-result-team,
+.setup-result-demon .setup-result-team {
+  color: #e86a7a;
+}
+.role-group-traveler .role-group-team,
+.role-group-unknown .role-group-team {
+  color: var(--text-muted);
+}
+
+.setup-generate {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.setup-generate-hint {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  color: var(--text-dim);
+}
+
+.setup-result {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--gold-glow);
+  border-radius: var(--radius-sm);
+  background: var(--gold-soft);
+}
+
+.setup-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.85rem;
+  color: var(--gold);
+}
+
+.setup-reroll {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--gold-glow);
+  background: transparent;
+  color: var(--gold);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.setup-reroll:hover {
+  background: rgba(217, 178, 76, 0.15);
+}
+
+.setup-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.setup-result-group {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.setup-result-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.setup-result-team {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.setup-result-count {
+  font-size: 0.72rem;
+  color: var(--text-muted);
   font-weight: 700;
 }
 
-.json-roles-list code {
-  font-family: "Consolas", "Monaco", monospace;
-  color: #c9d1d9;
-  font-size: 0.85rem;
+.setup-result-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.setup-result-group li {
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.setup-result-empty {
+  color: var(--text-dim);
+}
+
+.setup-result-notes {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.setup-result-notes strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--gold);
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 0.78rem;
+}
+
+.setup-result-notes ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 3px;
+}
+
+.setup-result-warn {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--evil-soft);
+  border: 1px solid rgba(157, 34, 53, 0.3);
+  color: #e86a7a;
+  font-size: 0.76rem;
 }
 
 .json-raw {
