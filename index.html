@@ -242,6 +242,7 @@
     <ul class="roadmap">
       <li><span class="dot done"></span> Script &amp; grimoire JSON</li>
       <li><span class="dot done"></span> Player count setup</li>
+      <li><span class="dot done"></span> Random setup generator</li>
       <li><span class="dot"></span> Storyteller tools</li>
       <li><span class="dot"></span> Offline PWA support</li>
       <li><span class="dot"></span> Role search &amp; filters</li>
@@ -287,10 +288,15 @@
           <p class="json-setup-label">Setup for <strong id="json-setup-count">10</strong> players</p>
           <div class="player-picker player-picker-compact" role="group" aria-label="Number of players"></div>
           <div class="setup-stats setup-stats-compact"></div>
+          <div class="setup-generate">
+            <button class="btn btn-primary" type="button" id="draw-setup-btn" onclick="drawSetup()">🎲 Draw random setup</button>
+            <p class="setup-generate-hint">Randomly picks characters from this script for the chosen player count — the team split stays legal.</p>
+          </div>
+          <div id="setup-result" class="setup-result hidden"></div>
         </div>
 
         <h3 class="json-roles-heading">Script roles</h3>
-        <ol id="json-roles" class="json-roles-list"></ol>
+        <div id="json-roles" class="json-roles"></div>
         <h3 class="json-roles-heading">Raw JSON</h3>
         <pre id="json-raw" class="json-raw"></pre>
         <div class="json-actions">
