@@ -2,6 +2,39 @@ let allScripts = [];
 let currentScriptFile = null;
 let activeScript = null;
 let activeScriptJson = null;
+let activeGrouped = null;
+
+let characters = {};
+let charactersPromise = null;
+
+const TEAM_ORDER = ["townsfolk", "outsider", "minion", "demon", "traveler", "unknown"];
+const TEAM_LABELS = {
+  townsfolk: "Townsfolk",
+  outsider: "Outsiders",
+  minion: "Minions",
+  demon: "Demon",
+  traveler: "Travellers",
+  unknown: "Unclassified",
+};
+
+// Setup-modifying characters. Deltas apply when the character is in play.
+// `outsider` shifts the Townsfolk/Outsider split; `minion` adds extra Minions;
+// `outsiderChoice` is a Storyteller choice (we pick one at random);
+// `note` is shown to explain; `special` means the standard split can't be auto-applied.
+const SETUP_MODIFIERS = {
+  baron: { outsider: 2, note: "Baron: +2 Outsiders (−2 Townsfolk)." },
+  godfather: { outsiderChoice: [1, -1], note: "Godfather: +1 or −1 Outsider (Storyteller's choice)." },
+  fanggu: { outsider: 1, note: "Fang Gu: +1 Outsider." },
+  vigormortis: { outsider: -1, note: "Vigormortis: −1 Outsider." },
+  balloonist: { note: "Balloonist: +1 Outsider — adjust the split by hand." },
+  marionette: { minion: 1, note: "Marionette: +1 Minion (an extra Minion, one fewer Townsfolk)." },
+  lilmonsta: { minion: 1, note: "Lil' Monsta: +1 Minion; the Minions babysit the demon token." },
+  huntsman: { note: "Huntsman: the Damsel is added to the game." },
+  choirboy: { note: "Choirboy: the King must be in play." },
+  legion: { special: "Legion: most players are Legion — the standard split doesn't apply." },
+  atheist: { special: "Atheist: there may be no evil players — the Storyteller runs a special game." },
+  riot: { special: "Riot: all Minions are Riot." },
+};
 
 const PLAYER_SETUP = {
   5: { townsfolk: 3, outsiders: 0, minions: 1, demon: 1 },
@@ -27,14 +60,74 @@ function titleFromFilename(name) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function show(id, btn) {
+function loadCharacters() {
+  if (!charactersPromise) {
+    charactersPromise = fetch("data/characters.json")
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((d) => {
+        characters = d && typeof d === "object" ? d : {};
+        return characters;
+      })
+      .catch(() => {
+        characters = {};
+        return characters;
+      });
+  }
+  return charactersPromise;
+}
+
+function getCharacter(id) {
+  const c = characters[id];
+  if (c) return { id, name: c.name, team: c.team || "unknown" };
+  return {
+    id,
+    name: id.replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()),
+    team: "unknown",
+  };
+}
+
+function groupRoles(roles) {
+  const grouped = { townsfolk: [], outsider: [], minion: [], demon: [], traveler: [], unknown: [] };
+  roles.forEach((id) => {
+    const c = getCharacter(id);
+    (grouped[c.team] || grouped.unknown).push(c);
+  });
+  return grouped;
+}
+
+function pickRandom(arr, n) {
+  const pool = arr.slice();
+  const out = [];
+  const take = Math.max(0, Math.min(n, pool.length));
+  for (let i = 0; i < take; i++) {
+    out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  }
+  return out;
+}
+
+function activatePage(id) {
+  const page = document.getElementById(id);
+  if (!page || !page.classList.contains("page")) return;
+
   document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+  page.classList.add("active");
   document.querySelectorAll(".bottom-nav button").forEach((b) => b.classList.remove("active"));
-  const navBtn = btn || document.querySelector(`.bottom-nav button[data-page="${id}"]`);
+  const navBtn = document.querySelector(`.bottom-nav button[data-page="${id}"]`);
   if (navBtn) navBtn.classList.add("active");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+function show(id) {
+  if (location.hash === `#${id}`) {
+    activatePage(id);
+  } else {
+    location.hash = id;
+  }
+}
+
+window.addEventListener("hashchange", () => {
+  activatePage(location.hash.slice(1) || "home");
+});
 
 function renderSetupStats(container, count) {
   const setup = PLAYER_SETUP[count];
@@ -83,6 +176,8 @@ function setPlayerCount(count) {
 
   const countLabel = document.getElementById("json-setup-count");
   if (countLabel) countLabel.textContent = count;
+
+  renderSetupResult(null);
 }
 
 function initPlayerSetup() {
@@ -163,6 +258,9 @@ function renderGrimoirePanel(script, data) {
   const copyBtn = document.getElementById("copy-json-btn");
   const label = document.getElementById("json-source-label");
 
+  activeGrouped = null;
+  renderSetupResult(null);
+
   if (!data) {
     emptyEl.classList.remove("hidden");
     contentEl.classList.add("hidden");
@@ -201,17 +299,176 @@ function renderGrimoirePanel(script, data) {
       '<p class="json-pane-lead">No <code>_meta</code> entry. Expected <code>{"id":"_meta","author":"…","name":"…"}</code> as the first item.</p>';
   }
 
-  rolesEl.innerHTML = roles.length
-    ? roles
-        .map((role, i) => `<li><span class="role-index">${i + 1}</span><code>${escapeHtml(role)}</code></li>`)
-        .join("")
-    : '<li class="json-pane-lead">No roles listed yet.</li>';
+  const grouped = groupRoles(roles);
+  activeGrouped = grouped;
+  rolesEl.innerHTML = renderGroupedRolesHtml(grouped);
 
   rawEl.textContent = JSON.stringify(data);
 }
 
+function renderGroupedRolesHtml(grouped) {
+  const sections = TEAM_ORDER.filter((team) => grouped[team] && grouped[team].length).map((team) => {
+    const items = grouped[team]
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((c) => `<li><code>${escapeHtml(c.name)}</code></li>`)
+      .join("");
+    return `
+      <div class="role-group role-group-${team}">
+        <div class="role-group-head">
+          <span class="role-group-team">${TEAM_LABELS[team]}</span>
+          <span class="role-group-count">${grouped[team].length}</span>
+        </div>
+        <ul class="role-group-list">${items}</ul>
+      </div>`;
+  });
+  return sections.length ? sections.join("") : '<p class="json-pane-lead">No roles listed yet.</p>';
+}
+
+function generateSetup(grouped, count) {
+  const base = PLAYER_SETUP[count];
+  if (!base) return null;
+
+  const notes = [];
+  const warnings = [];
+  const seenNotes = new Set();
+  const addNote = (t) => {
+    if (t && !seenNotes.has(t)) {
+      seenNotes.add(t);
+      notes.push(t);
+    }
+  };
+
+  let townsfolkN = base.townsfolk;
+  let outsiderN = base.outsiders;
+  let minionN = base.minions;
+  const demonN = base.demon;
+
+  // Draw evil first so setup effects (Baron, Godfather, Fang Gu, …) can shift the split.
+  const demons = pickRandom(grouped.demon, demonN);
+  const minions = pickRandom(grouped.minion, minionN);
+  const minionPool = grouped.minion.filter((m) => !minions.includes(m));
+  const queue = [...demons, ...minions];
+
+  while (queue.length) {
+    const c = queue.shift();
+    const mod = SETUP_MODIFIERS[c.id];
+    if (!mod) continue;
+    if (mod.special) {
+      addNote(mod.special);
+      continue;
+    }
+    if (mod.note) addNote(mod.note);
+    if (typeof mod.outsider === "number") {
+      outsiderN += mod.outsider;
+      townsfolkN -= mod.outsider;
+    }
+    if (Array.isArray(mod.outsiderChoice)) {
+      const d = mod.outsiderChoice[Math.floor(Math.random() * mod.outsiderChoice.length)];
+      outsiderN += d;
+      townsfolkN -= d;
+    }
+    if (mod.minion) {
+      for (let i = 0; i < mod.minion; i++) {
+        minionN += 1;
+        townsfolkN -= 1;
+        const extra = pickRandom(minionPool, 1)[0];
+        if (extra) {
+          minions.push(extra);
+          minionPool.splice(minionPool.indexOf(extra), 1);
+          queue.push(extra);
+        }
+      }
+    }
+  }
+
+  // Keep totals exact: clamp evil/outsider counts, then derive Townsfolk from the remainder.
+  minionN = Math.max(0, minionN);
+  outsiderN = Math.max(0, Math.min(outsiderN, count - minionN - demonN));
+  townsfolkN = Math.max(0, count - outsiderN - minionN - demonN);
+
+  const outsiders = pickRandom(grouped.outsider, outsiderN);
+  const townsfolk = pickRandom(grouped.townsfolk, townsfolkN);
+
+  // Surface setup notes for any good-team characters that actually got drawn.
+  [...townsfolk, ...outsiders].forEach((c) => {
+    const mod = SETUP_MODIFIERS[c.id];
+    if (mod && (mod.note || mod.special)) addNote(mod.note || mod.special);
+  });
+
+  const target = { townsfolk: townsfolkN, outsider: outsiderN, minion: minionN, demon: demonN };
+  const drawn = { townsfolk, outsider: outsiders, minion: minions, demon: demons };
+
+  [
+    ["demon", demonN],
+    ["minion", minionN],
+    ["outsider", outsiderN],
+    ["townsfolk", townsfolkN],
+  ].forEach(([team, want]) => {
+    const have = drawn[team].length;
+    if (have < want) warnings.push(`Script only has ${have} for ${TEAM_LABELS[team]} — needs ${want}.`);
+  });
+
+  return { count, target, drawn, notes, warnings };
+}
+
+function renderSetupResult(setup) {
+  const el = document.getElementById("setup-result");
+  if (!el) return;
+  if (!setup) {
+    el.classList.add("hidden");
+    el.innerHTML = "";
+    return;
+  }
+  el.classList.remove("hidden");
+
+  const teams = ["townsfolk", "outsider", "minion", "demon"];
+  const groupsHtml = teams
+    .map((team) => {
+      const list = setup.drawn[team];
+      const items =
+        list.map((c) => `<li>${escapeHtml(c.name)}</li>`).join("") ||
+        '<li class="setup-result-empty">—</li>';
+      return `
+        <div class="setup-result-group setup-result-${team}">
+          <div class="setup-result-group-head">
+            <span class="setup-result-team">${TEAM_LABELS[team]}</span>
+            <span class="setup-result-count">${list.length}/${setup.target[team]}</span>
+          </div>
+          <ul>${items}</ul>
+        </div>`;
+    })
+    .join("");
+
+  const notesHtml = setup.notes.length
+    ? `<div class="setup-result-notes"><strong>Setup effects</strong><ul>${setup.notes
+        .map((n) => `<li>${escapeHtml(n)}</li>`)
+        .join("")}</ul></div>`
+    : "";
+
+  const warnHtml = setup.warnings.length
+    ? `<div class="setup-result-warn">${setup.warnings.map((w) => escapeHtml(w)).join("<br>")}</div>`
+    : "";
+
+  el.innerHTML = `
+    <div class="setup-result-head">
+      <span>Random setup · ${setup.count} players</span>
+      <button type="button" class="setup-reroll" onclick="drawSetup()">🎲 Re-roll</button>
+    </div>
+    <div class="setup-result-grid">${groupsHtml}</div>
+    ${notesHtml}
+    ${warnHtml}
+  `;
+}
+
+function drawSetup() {
+  if (!activeGrouped) return;
+  renderSetupResult(generateSetup(activeGrouped, selectedPlayers));
+}
+
 async function loadGrimoirePanel(script) {
-  activeScriptJson = await fetchScriptJson(script);
+  const [data] = await Promise.all([fetchScriptJson(script), loadCharacters()]);
+  activeScriptJson = data;
   renderGrimoirePanel(script, activeScriptJson);
 }
 
@@ -359,7 +616,7 @@ function renderScriptGrid(scripts) {
     const body = document.createElement("div");
     body.className = "script-card-body";
     body.innerHTML = `
-      <h3>${script.title}</h3>
+      <h3>${escapeHtml(script.title)}</h3>
       <div class="script-card-badges">
         ${script.current ? '<span class="badge">Tonight</span>' : ""}
         ${script.json ? '<span class="badge badge-json">JSON</span>' : ""}
@@ -437,4 +694,6 @@ document.addEventListener("keydown", (e) => {
 });
 
 loadScripts();
+loadCharacters();
 initPlayerSetup();
+activatePage(location.hash.slice(1) || "home");
