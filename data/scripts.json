@@ -16,5 +16,11 @@
     "file": "scripts/Trouble-Brewing-Reforged.png",
     "json": "scripts/Trouble-Brewing-Reforged.json",
     "current": false
+  },
+  {
+    "title": "Twisted Truths",
+    "file": "scripts/Twisted-Truths.png",
+    "json": "scripts/Twisted-Truths.json",
+    "current": true
   }
 ]
