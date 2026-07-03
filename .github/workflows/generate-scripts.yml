@@ -38,6 +38,13 @@ jobs:
             NAME=$(basename "$FILE")
             TITLE=$(basename "$FILE" | sed 's/\.[^.]*$//' | sed 's/-/ /g' | sed -E 's/\b(.)/\U\1/g')
 
+            JSON_PATH="${FILE%.*}.json"
+            if [ -f "$JSON_PATH" ]; then
+              JSON_FIELD="\"$JSON_PATH\""
+            else
+              JSON_FIELD="null"
+            fi
+
             if [ "$NAME" = "$CURRENT" ]; then
               CURRENT_FLAG=true
             else
@@ -53,6 +60,7 @@ jobs:
             echo "  {" >> data/scripts.json
             echo "    \"title\": \"$TITLE\"," >> data/scripts.json
             echo "    \"file\": \"$FILE\"," >> data/scripts.json
+            echo "    \"json\": $JSON_FIELD," >> data/scripts.json
             echo "    \"current\": $CURRENT_FLAG" >> data/scripts.json
             echo -n "  }" >> data/scripts.json
 
