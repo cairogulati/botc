@@ -6,9 +6,9 @@
     "current": false
   },
   {
-    "title": "Damsel_in_Distress",
-    "file": "scripts/Damsel_in_Distress.png",
-    "json": null,
+    "title": "Damsel In Distress",
+    "file": "scripts/Damsel-in-Distress.png",
+    "json": "scripts/Damsel-in-Distress.json",
     "current": false
   },
   {
