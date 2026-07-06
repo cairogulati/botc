@@ -1,5 +1,17 @@
 [
   {
+    "title": "Bad Moon Rising",
+    "file": "scripts/Bad-Moon-Rising.png",
+    "json": "scripts/Bad-Moon-Rising.json",
+    "current": false
+  },
+  {
+    "title": "Damsel_in_Distress",
+    "file": "scripts/Damsel_in_Distress.png",
+    "json": null,
+    "current": false
+  },
+  {
     "title": "One Yes Is Enough",
     "file": "scripts/One-Yes-Is-Enough.png",
     "json": "scripts/One-Yes-Is-Enough.json",
@@ -18,9 +30,21 @@
     "current": false
   },
   {
+    "title": "Trouble Brewing",
+    "file": "scripts/Trouble-Brewing.png",
+    "json": "scripts/Trouble-Brewing.json",
+    "current": false
+  },
+  {
     "title": "Twisted Truths",
     "file": "scripts/Twisted-Truths.png",
     "json": "scripts/Twisted-Truths.json",
     "current": true
+  },
+  {
+    "title": "Unknown Townsfolk",
+    "file": "scripts/Unknown-townsfolk.png",
+    "json": "scripts/Unknown-townsfolk.json",
+    "current": false
   }
 ]
