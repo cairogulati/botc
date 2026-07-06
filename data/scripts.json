@@ -9,7 +9,7 @@
     "title": "Damsel In Distress",
     "file": "scripts/Damsel-in-Distress.png",
     "json": "scripts/Damsel-in-Distress.json",
-    "current": false
+    "current": true
   },
   {
     "title": "One Yes Is Enough",
@@ -39,7 +39,7 @@
     "title": "Twisted Truths",
     "file": "scripts/Twisted-Truths.png",
     "json": "scripts/Twisted-Truths.json",
-    "current": true
+    "current": false
   },
   {
     "title": "Unknown Townsfolk",
