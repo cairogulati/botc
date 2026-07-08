@@ -18,6 +18,12 @@
     "current": false
   },
   {
+    "title": "Open Season",
+    "file": "scripts/Open-Season.png",
+    "json": "scripts/Open-Season.json",
+    "current": false
+  },
+  {
     "title": "The Bloody Harvest",
     "file": "scripts/The-Bloody-Harvest.png",
     "json": "scripts/The-Bloody-Harvest.json",
