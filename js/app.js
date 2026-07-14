@@ -1,5 +1,5 @@
 let allScripts = [];
-let currentScriptFile = null;
+let currentScriptFiles = [];
 let activeScript = null;
 let activeScriptJson = null;
 let activeGrouped = null;
@@ -71,6 +71,7 @@ function getGameSchedule(now = new Date()) {
     return {
       isGameDay: true,
       featuredHeading: "Tonight's Script",
+      featuredHeadingPlural: "Tonight's Scripts",
       scriptsLead: "Tonight",
       badge: "Tonight",
       playersHeading: "Players Tonight",
@@ -87,6 +88,7 @@ function getGameSchedule(now = new Date()) {
         daysUntil: i,
         nextDayName: name,
         featuredHeading: `${name}'s Script`,
+        featuredHeadingPlural: `${name}'s Scripts`,
         scriptsLead: i === 1 ? "Tomorrow" : `Next up (${short})`,
         badge: short,
         playersHeading: i === 1 ? "Players Tomorrow" : `Players on ${name}`,
@@ -97,19 +99,23 @@ function getGameSchedule(now = new Date()) {
   return {
     isGameDay: false,
     featuredHeading: "Upcoming Script",
+    featuredHeadingPlural: "Upcoming Scripts",
     scriptsLead: "Upcoming",
     badge: "Next",
     playersHeading: "Players",
   };
 }
 
-function applyGameDayLabels() {
+function applyGameDayLabels(scriptCount = 1) {
   const schedule = getGameSchedule();
   const heading = document.getElementById("featured-script-heading");
   const leadPrefix = document.getElementById("scripts-lead-prefix");
   const playersHeading = document.getElementById("players-heading");
 
-  if (heading) heading.textContent = schedule.featuredHeading;
+  if (heading) {
+    heading.textContent =
+      scriptCount > 1 ? schedule.featuredHeadingPlural : schedule.featuredHeading;
+  }
   if (leadPrefix) leadPrefix.textContent = schedule.scriptsLead;
   if (playersHeading) playersHeading.textContent = schedule.playersHeading;
 
@@ -567,26 +573,40 @@ function closeScriptModal() {
   activeScriptJson = null;
 }
 
-function openCurrentScript() {
-  const current = getCurrentScript();
-  if (current) openScriptDetail(current, "sheet");
-  else if (currentScriptFile) {
-    openScript(`scripts/${currentScriptFile}`, titleFromFilename(currentScriptFile));
-  }
+function scriptBasename(scriptOrFile) {
+  const file = typeof scriptOrFile === "string" ? scriptOrFile : scriptOrFile?.file || "";
+  return file.split("/").pop().toLowerCase();
 }
 
-function openCurrentGrimoire() {
-  const current = getCurrentScript();
-  if (current?.json) openScriptDetail(current, "json");
+function getCurrentScripts() {
+  const marked = allScripts.filter((s) => s.current);
+  if (marked.length) return marked;
+
+  if (!currentScriptFiles.length) return [];
+
+  return currentScriptFiles
+    .map((name) => {
+      const found = allScripts.find((s) => scriptBasename(s) === name);
+      if (found) return found;
+      return {
+        title: titleFromFilename(name),
+        file: `scripts/${name}`,
+        json: null,
+        current: true,
+      };
+    })
+    .filter(Boolean);
 }
 
 function getCurrentScript() {
-  return (
-    allScripts.find((s) => s.current) ||
-    allScripts.find(
-      (s) => s.file.split("/").pop().toLowerCase() === (currentScriptFile || "").toLowerCase()
-    )
-  );
+  return getCurrentScripts()[0] || null;
+}
+
+function formatScriptList(scripts) {
+  if (!scripts.length) return "No script set";
+  if (scripts.length === 1) return scripts[0].title;
+  if (scripts.length === 2) return `${scripts[0].title} & ${scripts[1].title}`;
+  return scripts.map((s) => s.title).join(" · ");
 }
 
 async function copyGrimoireJson() {
@@ -599,44 +619,70 @@ async function copyGrimoireJson() {
   }
 }
 
-function renderFeatured(script) {
-  const titleEl = document.getElementById("currentName");
-  const labelEl = document.getElementById("currentScriptLabel");
-  const thumbEl = document.getElementById("featured-thumb");
-  const openBtn = document.getElementById("open-current-btn");
-  const jsonBtn = document.getElementById("open-current-json-btn");
+function renderFeaturedItem(script) {
+  const item = document.createElement("article");
+  item.className = "featured-script-item";
 
-  if (!script) {
-    const fallback = currentScriptFile ? titleFromFilename(currentScriptFile) : "No script set";
-    titleEl.textContent = fallback;
-    labelEl.textContent = fallback;
-    thumbEl.innerHTML = '<div class="thumb-placeholder">📜</div>';
-    openBtn.disabled = !currentScriptFile;
-    if (jsonBtn) {
-      jsonBtn.disabled = true;
-      jsonBtn.classList.add("btn-disabled");
-    }
-    return;
-  }
-
-  titleEl.textContent = script.title;
-  labelEl.textContent = script.title;
-  openBtn.disabled = false;
-
-  if (jsonBtn) {
-    jsonBtn.disabled = !script.json;
-    jsonBtn.classList.toggle("btn-disabled", !script.json);
-  }
+  const thumb = document.createElement("div");
+  thumb.className = "featured-thumb";
+  thumb.title = `Open ${script.title}`;
 
   const img = document.createElement("img");
   img.alt = script.title;
   img.src = script.file;
   img.onerror = () => {
-    thumbEl.innerHTML = '<div class="thumb-placeholder">📜</div>';
+    thumb.innerHTML = '<div class="thumb-placeholder">📜</div>';
   };
-  thumbEl.innerHTML = "";
-  thumbEl.appendChild(img);
-  thumbEl.onclick = () => openScriptDetail(script, "sheet");
+  thumb.appendChild(img);
+  thumb.addEventListener("click", () => openScriptDetail(script, "sheet"));
+
+  const body = document.createElement("div");
+  body.className = "featured-script-item-body";
+  body.innerHTML = `
+    <p class="featured-title">${escapeHtml(script.title)}</p>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary featured-open-sheet">Open Script</button>
+      <button type="button" class="btn btn-ghost featured-open-json"${script.json ? "" : " disabled"}>Grimoire JSON</button>
+    </div>
+  `;
+
+  body.querySelector(".featured-open-sheet").addEventListener("click", () => {
+    openScriptDetail(script, "sheet");
+  });
+  body.querySelector(".featured-open-json").addEventListener("click", () => {
+    if (script.json) openScriptDetail(script, "json");
+  });
+
+  item.appendChild(thumb);
+  item.appendChild(body);
+  return item;
+}
+
+function renderFeatured(scripts) {
+  const list = Array.isArray(scripts) ? scripts : scripts ? [scripts] : [];
+  const container = document.getElementById("featured-scripts");
+  const labelEl = document.getElementById("currentScriptLabel");
+
+  applyGameDayLabels(list.length || 1);
+  labelEl.textContent = formatScriptList(list);
+
+  container.innerHTML = "";
+  container.classList.toggle("featured-scripts-multi", list.length > 1);
+
+  if (!list.length) {
+    const empty = document.createElement("p");
+    empty.className = "featured-title";
+    empty.id = "currentName";
+    empty.textContent = currentScriptFiles.length
+      ? formatScriptList(
+          currentScriptFiles.map((name) => ({ title: titleFromFilename(name) }))
+        )
+      : "No script set";
+    container.appendChild(empty);
+    return;
+  }
+
+  list.forEach((script) => container.appendChild(renderFeaturedItem(script)));
 }
 
 function renderScriptGrid(scripts) {
@@ -736,9 +782,14 @@ async function enrichScriptsWithRoles() {
 async function loadCurrentScript() {
   try {
     const res = await fetch("current-script.txt");
-    currentScriptFile = (await res.text()).trim();
+    const text = await res.text();
+    currentScriptFiles = text
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#"))
+      .map((line) => line.toLowerCase());
   } catch {
-    currentScriptFile = null;
+    currentScriptFiles = [];
   }
 }
 
@@ -752,24 +803,32 @@ async function loadScripts() {
     allScripts = [];
   }
 
-  if (currentScriptFile) {
+  if (currentScriptFiles.length) {
+    const order = new Map(currentScriptFiles.map((name, i) => [name, i]));
     allScripts = allScripts.map((s) => ({
       ...s,
-      current: s.file.split("/").pop().toLowerCase() === currentScriptFile.toLowerCase(),
+      current: order.has(scriptBasename(s)),
     }));
+    allScripts.sort((a, b) => {
+      if (a.current !== b.current) return a.current ? -1 : 1;
+      if (a.current && b.current) {
+        return (order.get(scriptBasename(a)) ?? 0) - (order.get(scriptBasename(b)) ?? 0);
+      }
+      return a.title.localeCompare(b.title);
+    });
+  } else {
+    allScripts.sort((a, b) => {
+      if (!!a.current !== !!b.current) return a.current ? -1 : 1;
+      return a.title.localeCompare(b.title);
+    });
   }
-
-  allScripts.sort((a, b) => {
-    if (a.current !== b.current) return a.current ? -1 : 1;
-    return a.title.localeCompare(b.title);
-  });
 
   await loadCharacters();
   await enrichScriptsWithRoles();
 
-  applyGameDayLabels();
-
-  renderFeatured(getCurrentScript());
+  const current = getCurrentScripts();
+  applyGameDayLabels(current.length || 1);
+  renderFeatured(current);
   renderScriptGrid(allScripts);
 
   document.getElementById("script-search").addEventListener("input", (e) => {
