@@ -9,7 +9,7 @@
     "title": "Damsel In Distress",
     "file": "scripts/Damsel-in-Distress.png",
     "json": "scripts/Damsel-in-Distress.json",
-    "current": true
+    "current": false
   },
   {
     "title": "One Yes Is Enough",
