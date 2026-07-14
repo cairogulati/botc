@@ -36,18 +36,13 @@
   </section>
 
   <section class="card featured-script">
-    <div class="featured-thumb" id="featured-thumb" title="Tap to open script">
-      <div class="thumb-placeholder">📜</div>
-    </div>
-    <div class="featured-body">
-      <h2 id="featured-script-heading">Tonight's Script</h2>
+    <h2 id="featured-script-heading">Tonight's Script</h2>
+    <p class="featured-lead">Skim tonight's script(s) before you arrive. You don't need to memorize every role — the Storyteller will walk everyone through the important bits.</p>
+    <div id="featured-scripts" class="featured-scripts">
       <p class="featured-title" id="currentName">Loading…</p>
-      <p>Skim the script before you arrive. You don't need to memorize every role — the Storyteller will walk everyone through the important bits.</p>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="open-current-btn" onclick="openCurrentScript()">Open Script</button>
-        <button class="btn btn-ghost" id="open-current-json-btn" onclick="openCurrentGrimoire()">Grimoire JSON</button>
-        <button class="btn btn-ghost" onclick="show('scripts')">All Scripts</button>
-      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="show('scripts')">All Scripts</button>
     </div>
   </section>
 
