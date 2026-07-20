@@ -12,6 +12,12 @@
     "current": false
   },
   {
+    "title": "Idiots Idiots Idiots",
+    "file": "scripts/Idiots-Idiots-Idiots.png",
+    "json": "scripts/Idiots-Idiots-Idiots.json",
+    "current": false
+  },
+  {
     "title": "Is The Town Lying",
     "file": "scripts/Is-the-town-lying.png",
     "json": "scripts/Is-the-town-lying.json",
