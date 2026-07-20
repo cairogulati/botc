@@ -58,5 +58,11 @@
     "file": "scripts/Unknown-townsfolk.png",
     "json": "scripts/Unknown-townsfolk.json",
     "current": false
+  },
+  {
+    "title": "Circus",
+    "file": "scripts/circus.png",
+    "json": null,
+    "current": false
   }
 ]
