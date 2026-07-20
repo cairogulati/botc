@@ -15,13 +15,13 @@
     "title": "Idiots Idiots Idiots",
     "file": "scripts/Idiots-Idiots-Idiots.png",
     "json": "scripts/Idiots-Idiots-Idiots.json",
-    "current": false
+    "current": true
   },
   {
     "title": "Is The Town Lying",
     "file": "scripts/Is-the-town-lying.png",
     "json": "scripts/Is-the-town-lying.json",
-    "current": true
+    "current": false
   },
   {
     "title": "One Yes Is Enough",
