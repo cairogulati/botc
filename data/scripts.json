@@ -18,6 +18,12 @@
     "current": false
   },
   {
+    "title": "Is It An Atheist",
+    "file": "scripts/Is-it-an-Atheist.png",
+    "json": "scripts/Is-it-an-Atheist.json",
+    "current": false
+  },
+  {
     "title": "Is The Town Lying",
     "file": "scripts/Is-the-town-lying.png",
     "json": "scripts/Is-the-town-lying.json",
