@@ -21,7 +21,7 @@
     "title": "Is It An Atheist",
     "file": "scripts/Is-it-an-Atheist.png",
     "json": "scripts/Is-it-an-Atheist.json",
-    "current": false
+    "current": true
   },
   {
     "title": "Is The Town Lying",
