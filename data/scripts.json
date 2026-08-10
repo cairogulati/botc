@@ -6,6 +6,12 @@
     "current": false
   },
   {
+    "title": "Beautiful Lies",
+    "file": "scripts/Beautiful-Lies.png",
+    "json": "scripts/Beautiful-Lies.json",
+    "current": false
+  },
+  {
     "title": "Damsel In Distress",
     "file": "scripts/Damsel-in-Distress.png",
     "json": "scripts/Damsel-in-Distress.json",
