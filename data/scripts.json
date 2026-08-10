@@ -9,7 +9,7 @@
     "title": "Beautiful Lies",
     "file": "scripts/Beautiful-Lies.png",
     "json": "scripts/Beautiful-Lies.json",
-    "current": false
+    "current": true
   },
   {
     "title": "Damsel In Distress",
@@ -33,7 +33,7 @@
     "title": "Is The Town Lying",
     "file": "scripts/Is-the-town-lying.png",
     "json": "scripts/Is-the-town-lying.json",
-    "current": true
+    "current": false
   },
   {
     "title": "One Yes Is Enough",
