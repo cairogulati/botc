@@ -27,7 +27,7 @@
     "title": "Is The Town Lying",
     "file": "scripts/Is-the-town-lying.png",
     "json": "scripts/Is-the-town-lying.json",
-    "current": false
+    "current": true
   },
   {
     "title": "One Yes Is Enough",
@@ -57,7 +57,7 @@
     "title": "Trouble Brewing",
     "file": "scripts/Trouble-Brewing.png",
     "json": "scripts/Trouble-Brewing.json",
-    "current": true
+    "current": false
   },
   {
     "title": "Twisted Truths",
