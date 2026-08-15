@@ -80,7 +80,7 @@
   {
     "title": "Circus",
     "file": "scripts/circus.png",
-    "json": null,
+    "json": "scripts/circus.json",
     "current": false
   }
 ]
