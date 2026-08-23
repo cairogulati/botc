@@ -78,6 +78,12 @@
     "current": false
   },
   {
+    "title": "Veil Of Deceit",
+    "file": "scripts/Veil-of-Deceit.png",
+    "json": "scripts/Veil-of-Deceit.json",
+    "current": false
+  },
+  {
     "title": "Circus",
     "file": "scripts/circus.png",
     "json": "scripts/circus.json",
