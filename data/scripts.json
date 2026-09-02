@@ -27,7 +27,7 @@
     "title": "Is It An Atheist",
     "file": "scripts/Is-it-an-Atheist.png",
     "json": "scripts/Is-it-an-Atheist.json",
-    "current": false
+    "current": true
   },
   {
     "title": "Is The Town Lying",
@@ -81,7 +81,7 @@
     "title": "Veil Of Deceit",
     "file": "scripts/Veil-of-Deceit.png",
     "json": "scripts/Veil-of-Deceit.json",
-    "current": true
+    "current": false
   },
   {
     "title": "Circus",
