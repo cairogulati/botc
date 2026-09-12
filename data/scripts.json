@@ -33,13 +33,13 @@
     "title": "Is The Town Lying",
     "file": "scripts/Is-the-town-lying.png",
     "json": "scripts/Is-the-town-lying.json",
-    "current": true
+    "current": false
   },
   {
     "title": "LDBD",
     "file": "scripts/LDBD.png",
     "json": "scripts/LDBD.json",
-    "current": false
+    "current": true
   },
   {
     "title": "One Yes Is Enough",
