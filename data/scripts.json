@@ -54,6 +54,12 @@
     "current": false
   },
   {
+    "title": "Patience&Pestilence",
+    "file": "scripts/Patience&Pestilence.png",
+    "json": "scripts/Patience&Pestilence.json",
+    "current": false
+  },
+  {
     "title": "The Bloody Harvest",
     "file": "scripts/The-Bloody-Harvest.png",
     "json": "scripts/The-Bloody-Harvest.json",
