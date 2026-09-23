@@ -135,5 +135,8 @@
   "legion": { "name": "Legion", "team": "demon" },
   "leviathan": { "name": "Leviathan", "team": "demon" },
   "riot": { "name": "Riot", "team": "demon" },
-  "gangster": { "name": "Gangster", "team": "traveler" }
+  "gangster": { "name": "Gangster", "team": "traveler" },
+  "ogre": {"name": "Ogre", "team": "outsider"},
+  "banshee": {"name": "Banshee", "team": "townsfolk"},
+  "villageidiot": {"name": "Village Idiot", "team": "townsfolk"}
 }
