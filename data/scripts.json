@@ -66,6 +66,12 @@
     "current": false
   },
   {
+    "title": "TheBrokenProphecy",
+    "file": "scripts/TheBrokenProphecy.pdf",
+    "json": "scripts/TheBrokenProphecy.json",
+    "current": false
+  },
+  {
     "title": "Trouble Brewing Reforged",
     "file": "scripts/Trouble-Brewing-Reforged.png",
     "json": "scripts/Trouble-Brewing-Reforged.json",
