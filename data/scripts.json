@@ -57,7 +57,7 @@
     "title": "Patience&Pestilence",
     "file": "scripts/Patience&Pestilence.png",
     "json": "scripts/Patience&Pestilence.json",
-    "current": true
+    "current": false
   },
   {
     "title": "The Bloody Harvest",
@@ -69,7 +69,7 @@
     "title": "TheBrokenProphecy",
     "file": "scripts/TheBrokenProphecy.pdf",
     "json": "scripts/TheBrokenProphecy.json",
-    "current": false
+    "current": true
   },
   {
     "title": "Trouble Brewing Reforged",
