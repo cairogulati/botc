@@ -190,7 +190,7 @@
 
   <div id="scripts-empty" class="empty-state hidden">
     <div class="icon">📜</div>
-    <p>No scripts found. Add images to the <code>scripts/</code> folder and push to GitHub.</p>
+    <p>No scripts found. Add a PNG or PDF to the <code>scripts/</code> folder and push to GitHub.</p>
   </div>
 </div>
 
@@ -267,6 +267,10 @@
 
     <div id="modal-sheet" class="modal-body modal-pane active">
       <img id="script-image" alt="Script sheet">
+      <div id="script-pdf-wrap" class="script-pdf-wrap" hidden>
+        <iframe id="script-pdf" class="script-pdf" title="Script sheet"></iframe>
+        <a id="script-pdf-open" class="script-pdf-open" target="_blank" rel="noopener">Open PDF in a new tab</a>
+      </div>
     </div>
 
     <div id="modal-json" class="modal-body modal-pane">
