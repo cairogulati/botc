@@ -534,14 +534,76 @@ async function loadGrimoirePanel(script) {
   renderGrimoirePanel(script, activeScriptJson);
 }
 
+function isPdfFile(file) {
+  return /\.pdf$/i.test(file || "");
+}
+
+function scriptPreviewSrc(script) {
+  if (script?.preview) return script.preview;
+  const file = script?.file || "";
+  if (isPdfFile(file)) return file.replace(/\.pdf$/i, ".png");
+  return file;
+}
+
+function mountScriptPreview(container, script, { alt = "", lazy = false, fallbackClass }) {
+  const preview = scriptPreviewSrc(script);
+  const fallback = isPdfFile(script?.file) ? "PDF" : "📜";
+  if (!preview) {
+    container.innerHTML = `<div class="${fallbackClass}">${fallback}</div>`;
+    return;
+  }
+
+  const img = document.createElement("img");
+  if (alt) img.alt = alt;
+  if (lazy) img.loading = "lazy";
+  img.src = preview;
+  img.onerror = () => {
+    container.innerHTML = `<div class="${fallbackClass}">${fallback}</div>`;
+  };
+  container.appendChild(img);
+}
+
+function showScriptSheet(script) {
+  const img = document.getElementById("script-image");
+  const pdfWrap = document.getElementById("script-pdf-wrap");
+  const pdf = document.getElementById("script-pdf");
+  const pdfOpen = document.getElementById("script-pdf-open");
+  const file = script?.file || "";
+
+  if (isPdfFile(file)) {
+    img.hidden = true;
+    img.removeAttribute("src");
+    pdfWrap.hidden = false;
+    pdf.title = script.title || "Script sheet";
+    pdf.src = file;
+    pdfOpen.href = file;
+  } else {
+    pdfWrap.hidden = true;
+    pdf.src = "about:blank";
+    pdfOpen.removeAttribute("href");
+    img.hidden = false;
+    img.alt = script?.title || "Script sheet";
+    img.src = file;
+  }
+}
+
+function clearScriptSheet() {
+  const img = document.getElementById("script-image");
+  const pdfWrap = document.getElementById("script-pdf-wrap");
+  const pdf = document.getElementById("script-pdf");
+  img.removeAttribute("src");
+  img.hidden = false;
+  pdf.src = "about:blank";
+  pdfWrap.hidden = true;
+}
+
 async function openScriptDetail(script, tab = "sheet") {
   activeScript = script;
   const modal = document.getElementById("script-modal");
-  const img = document.getElementById("script-image");
   const jsonTab = document.querySelector('.modal-tab[data-tab="json"]');
 
   document.getElementById("modal-title").textContent = script.title;
-  img.src = script.file;
+  showScriptSheet(script);
   jsonTab.disabled = !script.json;
   jsonTab.classList.toggle("json-tab-disabled", !script.json);
 
@@ -567,15 +629,15 @@ function openScript(file, title) {
 
 function closeScriptModal() {
   document.getElementById("script-modal").classList.remove("show");
-  document.getElementById("script-image").src = "";
+  clearScriptSheet();
   document.body.style.overflow = "";
   activeScript = null;
   activeScriptJson = null;
 }
 
-function scriptBasename(scriptOrFile) {
+function scriptKey(scriptOrFile) {
   const file = typeof scriptOrFile === "string" ? scriptOrFile : scriptOrFile?.file || "";
-  return file.split("/").pop().toLowerCase();
+  return file.split("/").pop().toLowerCase().replace(/\.[^.]+$/, "");
 }
 
 function getCurrentScripts() {
@@ -586,7 +648,7 @@ function getCurrentScripts() {
 
   return currentScriptFiles
     .map((name) => {
-      const found = allScripts.find((s) => scriptBasename(s) === name);
+      const found = allScripts.find((s) => scriptKey(s) === scriptKey(name));
       if (found) return found;
       return {
         title: titleFromFilename(name),
@@ -627,13 +689,10 @@ function renderFeaturedItem(script) {
   thumb.className = "featured-thumb";
   thumb.title = `Open ${script.title}`;
 
-  const img = document.createElement("img");
-  img.alt = script.title;
-  img.src = script.file;
-  img.onerror = () => {
-    thumb.innerHTML = '<div class="thumb-placeholder">📜</div>';
-  };
-  thumb.appendChild(img);
+  mountScriptPreview(thumb, script, {
+    alt: script.title,
+    fallbackClass: "thumb-placeholder",
+  });
   thumb.addEventListener("click", () => openScriptDetail(script, "sheet"));
 
   const body = document.createElement("div");
@@ -707,14 +766,10 @@ function renderScriptGrid(scripts) {
     const thumb = document.createElement("div");
     thumb.className = "script-card-thumb";
 
-    const img = document.createElement("img");
-    img.alt = "";
-    img.loading = "lazy";
-    img.src = script.file;
-    img.onerror = () => {
-      thumb.innerHTML = '<div class="thumb-fallback">📜</div>';
-    };
-    thumb.appendChild(img);
+    mountScriptPreview(thumb, script, {
+      lazy: true,
+      fallbackClass: "thumb-fallback",
+    });
     thumb.addEventListener("click", () => openScriptDetail(script, "sheet"));
 
     const body = document.createElement("div");
@@ -804,15 +859,15 @@ async function loadScripts() {
   }
 
   if (currentScriptFiles.length) {
-    const order = new Map(currentScriptFiles.map((name, i) => [name, i]));
+    const order = new Map(currentScriptFiles.map((name, i) => [scriptKey(name), i]));
     allScripts = allScripts.map((s) => ({
       ...s,
-      current: order.has(scriptBasename(s)),
+      current: order.has(scriptKey(s)),
     }));
     allScripts.sort((a, b) => {
       if (a.current !== b.current) return a.current ? -1 : 1;
       if (a.current && b.current) {
-        return (order.get(scriptBasename(a)) ?? 0) - (order.get(scriptBasename(b)) ?? 0);
+        return (order.get(scriptKey(a)) ?? 0) - (order.get(scriptKey(b)) ?? 0);
       }
       return a.title.localeCompare(b.title);
     });
