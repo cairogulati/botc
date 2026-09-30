@@ -22,20 +22,57 @@ jobs:
         run: |
           mkdir -p data
 
-          CURRENT=$(cat current-script.txt | tr -d '\r\n')
+          # One entry per script name. PDF wins when a PNG (or other image) shares that name.
+          mapfile -t SELECTED < <(find scripts -type f \( \
+            -iname "*.jpg" -o \
+            -iname "*.jpeg" -o \
+            -iname "*.png" -o \
+            -iname "*.webp" -o \
+            -iname "*.pdf" \) | sort | awk '
+            {
+              file = $0
+              name = file
+              sub(/^.*\//, "", name)
+              stem = tolower(name)
+              sub(/\.[^.]*$/, "", stem)
+              ext = tolower(name)
+              sub(/^.*\./, "", ext)
+              if (ext == "pdf") {
+                pdf[stem] = file
+              } else if (ext == "png" || !(stem in image)) {
+                image[stem] = file
+              }
+            }
+            END {
+              for (stem in pdf) chosen[stem] = pdf[stem]
+              for (stem in image) if (!(stem in pdf)) chosen[stem] = image[stem]
+              for (stem in chosen) {
+                preview = ""
+                if ((stem in pdf) && (stem in image)) preview = image[stem]
+                print chosen[stem] "\t" preview
+              }
+            }
+          ' | sort)
+
+          CURRENT_KEYS=$(sed 's/\r$//' current-script.txt \
+            | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+            | grep -v '^#' \
+            | grep -v '^$' \
+            | sed 's/\.[^.]*$//' \
+            | tr '[:upper:]' '[:lower:]' || true)
 
           echo "[" > data/scripts.json
 
           FIRST=true
 
-          find scripts -type f \( \
-            -iname "*.jpg" -o \
-            -iname "*.jpeg" -o \
-            -iname "*.png" -o \
-            -iname "*.webp" \) | sort | while read FILE
-          do
+          for ENTRY in "${SELECTED[@]}"; do
+            FILE=${ENTRY%%$'\t'*}
+            PREVIEW=${ENTRY#*$'\t'}
+            [ "$PREVIEW" = "$ENTRY" ] && PREVIEW=""
+            [ -n "$FILE" ] || continue
 
             NAME=$(basename "$FILE")
+            STEM=$(printf '%s' "$NAME" | sed 's/\.[^.]*$//' | tr '[:upper:]' '[:lower:]')
             TITLE=$(basename "$FILE" | sed 's/\.[^.]*$//' | sed 's/-/ /g' | sed -E 's/\b(.)/\U\1/g')
 
             JSON_PATH="${FILE%.*}.json"
@@ -45,7 +82,7 @@ jobs:
               JSON_FIELD="null"
             fi
 
-            if [ "$NAME" = "$CURRENT" ]; then
+            if printf '%s\n' "$CURRENT_KEYS" | grep -Fxq "$STEM"; then
               CURRENT_FLAG=true
             else
               CURRENT_FLAG=false
@@ -60,6 +97,9 @@ jobs:
             echo "  {" >> data/scripts.json
             echo "    \"title\": \"$TITLE\"," >> data/scripts.json
             echo "    \"file\": \"$FILE\"," >> data/scripts.json
+            if [ -n "$PREVIEW" ]; then
+              echo "    \"preview\": \"$PREVIEW\"," >> data/scripts.json
+            fi
             echo "    \"json\": $JSON_FIELD," >> data/scripts.json
             echo "    \"current\": $CURRENT_FLAG" >> data/scripts.json
             echo -n "  }" >> data/scripts.json
