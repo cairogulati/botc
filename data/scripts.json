@@ -72,6 +72,12 @@
     "current": true
   },
   {
+    "title": "ThePlagueCourt",
+    "file": "scripts/ThePlagueCourt.pdf",
+    "json": "scripts/ThePlagueCourt.json",
+    "current": false
+  },
+  {
     "title": "Trouble Brewing Reforged",
     "file": "scripts/Trouble-Brewing-Reforged.png",
     "json": "scripts/Trouble-Brewing-Reforged.json",
