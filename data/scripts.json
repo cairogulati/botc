@@ -69,13 +69,13 @@
     "title": "TheBrokenProphecy",
     "file": "scripts/TheBrokenProphecy.pdf",
     "json": "scripts/TheBrokenProphecy.json",
-    "current": true
+    "current": false
   },
   {
     "title": "ThePlagueCourt",
     "file": "scripts/ThePlagueCourt.pdf",
     "json": "scripts/ThePlagueCourt.json",
-    "current": false
+    "current": true
   },
   {
     "title": "Trouble Brewing Reforged",
