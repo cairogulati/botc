@@ -280,6 +280,22 @@ body::before {
   max-width: 140px;
 }
 
+.featured-thumb,
+.script-card-thumb {
+  display: block;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.featured-thumb:focus-visible,
+.script-card-thumb:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 .featured-thumb:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px var(--gold-glow);
@@ -573,6 +589,7 @@ body::before {
 }
 
 .script-card-thumb {
+  border: 0;
   aspect-ratio: 3 / 4;
   background: var(--surface-raised);
   overflow: hidden;

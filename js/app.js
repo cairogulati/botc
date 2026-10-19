@@ -7,19 +7,21 @@ let activeGrouped = null;
 let characters = {};
 let charactersPromise = null;
 
-const TEAM_ORDER = ["townsfolk", "outsider", "minion", "demon", "traveler", "unknown"];
+const TEAM_ORDER = ["townsfolk", "outsider", "minion", "demon", "traveler", "fabled", "unknown"];
 const TEAM_LABELS = {
   townsfolk: "Townsfolk",
   outsider: "Outsiders",
   minion: "Minions",
   demon: "Demon",
   traveler: "Travellers",
+  fabled: "Fabled",
   unknown: "Unclassified",
 };
 
 // Setup-modifying characters. Deltas apply when the character is in play.
 // `outsider` shifts the Townsfolk/Outsider split; `minion` adds extra Minions;
 // `outsiderChoice` is a Storyteller choice (we pick one at random);
+// `noDemon` / `noMinions` remove that team from the starting setup;
 // `note` is shown to explain; `special` means the standard split can't be auto-applied.
 const SETUP_MODIFIERS = {
   baron: { outsider: 2, note: "Baron: +2 Outsiders (−2 Townsfolk)." },
@@ -29,6 +31,12 @@ const SETUP_MODIFIERS = {
   balloonist: { note: "Balloonist: +1 Outsider — adjust the split by hand." },
   marionette: { minion: 1, note: "Marionette: +1 Minion (an extra Minion, one fewer Townsfolk)." },
   lilmonsta: { minion: 1, note: "Lil' Monsta: +1 Minion; the Minions babysit the demon token." },
+  lordoftyphon: { minion: 1, note: "Lord of Typhon: +1 Minion; seat the Lord between two Minions." },
+  kazali: { noMinions: true, note: "Kazali: no Minions at the start — the Kazali chooses them on the first night." },
+  summoner: { noDemon: true, note: "Summoner: no Demon at the start — the Summoner makes one on night 3." },
+  hermit: { note: "Hermit: −0 or −1 Outsider — adjust the split by hand." },
+  xaan: { note: "Xaan: there are X Outsiders — adjust the split by hand." },
+  villageidiot: { note: "Village Idiot: +0 to +2 extra Village Idiots — adjust by hand." },
   huntsman: { note: "Huntsman: the Damsel is added to the game." },
   choirboy: { note: "Choirboy: the King must be in play." },
   legion: { special: "Legion: most players are Legion — the standard split doesn't apply." },
@@ -36,7 +44,9 @@ const SETUP_MODIFIERS = {
   riot: { special: "Riot: all Minions are Riot." },
 };
 
-const GAME_DAYS = [3, 6]; // Wednesday, Saturday
+// Default game days; `days:` and `date:` lines in current-script.txt override them.
+let GAME_DAYS = [3, 6]; // Wednesday, Saturday
+let gameDate = null;
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -64,8 +74,46 @@ function titleFromFilename(name) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
+function normId(id) {
+  return String(id).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function startOfDay(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 function getGameSchedule(now = new Date()) {
   const day = now.getDay();
+
+  // A one-off date in current-script.txt wins while it is today or upcoming.
+  if (gameDate) {
+    const daysUntil = Math.round((startOfDay(gameDate) - startOfDay(now)) / 86400000);
+    if (daysUntil === 0) {
+      return {
+        isGameDay: true,
+        featuredHeading: "Tonight's Script",
+        featuredHeadingPlural: "Tonight's Scripts",
+        scriptsLead: "Tonight",
+        badge: "Tonight",
+        playersHeading: "Players Tonight",
+      };
+    }
+    if (daysUntil > 0) {
+      const name = DAY_NAMES[gameDate.getDay()];
+      const short = DAY_SHORT[gameDate.getDay()];
+      const when = daysUntil < 7 ? name : `${short} ${gameDate.getDate()}/${gameDate.getMonth() + 1}`;
+      return {
+        isGameDay: false,
+        daysUntil,
+        nextDayName: name,
+        featuredHeading: `${when}'s Script`,
+        featuredHeadingPlural: `${when}'s Scripts`,
+        scriptsLead: daysUntil === 1 ? "Tomorrow" : `Next up (${when})`,
+        badge: daysUntil < 7 ? short : when,
+        playersHeading: daysUntil === 1 ? "Players Tomorrow" : `Players on ${when}`,
+      };
+    }
+  }
 
   if (GAME_DAYS.includes(day)) {
     return {
@@ -138,18 +186,19 @@ function loadCharacters() {
   return charactersPromise;
 }
 
-function getCharacter(id) {
+function getCharacter(rawId) {
+  const id = normId(rawId);
   const c = characters[id];
   if (c) return { id, name: c.name, team: c.team || "unknown" };
   return {
     id,
-    name: id.replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()),
+    name: String(rawId).replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()),
     team: "unknown",
   };
 }
 
 function groupRoles(roles) {
-  const grouped = { townsfolk: [], outsider: [], minion: [], demon: [], traveler: [], unknown: [] };
+  const grouped = { townsfolk: [], outsider: [], minion: [], demon: [], traveler: [], fabled: [], unknown: [] };
   roles.forEach((id) => {
     const c = getCharacter(id);
     (grouped[c.team] || grouped.unknown).push(c);
@@ -242,8 +291,25 @@ function setPlayerCount(count) {
   renderSetupResult(null);
 }
 
+function renderSetupTable() {
+  document.querySelectorAll(".setup-table tbody").forEach((tbody) => {
+    tbody.innerHTML = Object.entries(PLAYER_SETUP)
+      .map(
+        ([p, s]) =>
+          `<tr data-players="${p}"><td>${p}</td><td>${s.townsfolk}</td><td>${s.outsiders}</td><td>${s.minions}</td><td>${s.demon}</td></tr>`
+      )
+      .join("");
+  });
+}
+
 function initPlayerSetup() {
-  const stored = parseInt(localStorage.getItem("botc-players") || "10", 10);
+  renderSetupTable();
+  let stored = 10;
+  try {
+    stored = parseInt(localStorage.getItem("botc-players") || "10", 10);
+  } catch {
+    /* ignore */
+  }
   selectedPlayers = PLAYER_SETUP[stored] ? stored : 10;
 
   document.querySelectorAll(".player-picker").forEach((container) => {
@@ -282,25 +348,34 @@ function showJsonToast(message) {
   setTimeout(() => toast.classList.add("hidden"), 2200);
 }
 
+// Script JSON lists roles either as "id" strings or as {"id": "..."} objects.
+function roleIdsFromJson(data) {
+  const ids = [];
+  data.forEach((item) => {
+    const raw = item && typeof item === "object" ? item.id : item;
+    if (typeof raw !== "string" || raw === "_meta") return;
+    const id = normId(raw);
+    if (id && !ids.includes(id)) ids.push(id);
+  });
+  return ids;
+}
+
 function parseScriptJson(data) {
   if (!Array.isArray(data)) return null;
 
   const meta = data.find((item) => item && typeof item === "object" && item.id === "_meta") || null;
-  const roles = data.filter((item) => typeof item === "string");
-
-  return { meta, roles, raw: data };
+  return { meta, roles: roleIdsFromJson(data), raw: data };
 }
 
 async function fetchScriptJson(script) {
   if (!script.json) return null;
-  try {
-    const res = await fetch(script.json);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data) ? data : null;
-  } catch {
-    return null;
+  if (!script.jsonPromise) {
+    script.jsonPromise = fetch(script.json)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => (Array.isArray(data) ? data : null))
+      .catch(() => null);
   }
+  return script.jsonPromise;
 }
 
 function escapeHtml(str) {
@@ -404,11 +479,16 @@ function generateSetup(grouped, count) {
   let townsfolkN = base.townsfolk;
   let outsiderN = base.outsiders;
   let minionN = base.minions;
-  const demonN = base.demon;
+  let demonN = base.demon;
 
   // Draw evil first so setup effects (Baron, Godfather, Fang Gu, …) can shift the split.
-  const demons = pickRandom(grouped.demon, demonN);
+  let demons = pickRandom(grouped.demon, demonN);
+  if (demons.some((c) => SETUP_MODIFIERS[c.id]?.noMinions)) minionN = 0;
   const minions = pickRandom(grouped.minion, minionN);
+  if (minions.some((c) => SETUP_MODIFIERS[c.id]?.noDemon)) {
+    demonN = 0;
+    demons = [];
+  }
   const minionPool = grouped.minion.filter((m) => !minions.includes(m));
   const queue = [...demons, ...minions];
 
@@ -529,7 +609,14 @@ function drawSetup() {
 }
 
 async function loadGrimoirePanel(script) {
+  const label = document.getElementById("json-source-label");
+  document.getElementById("json-empty").classList.add("hidden");
+  document.getElementById("json-content").classList.add("hidden");
+  document.getElementById("copy-json-btn").disabled = true;
+  label.textContent = script.json ? "Loading grimoire JSON…" : "No grimoire JSON for this script yet.";
+
   const [data] = await Promise.all([fetchScriptJson(script), loadCharacters()]);
+  if (activeScript !== script) return; // viewer closed or switched while loading
   activeScriptJson = data;
   renderGrimoirePanel(script, activeScriptJson);
 }
@@ -539,6 +626,7 @@ function isPdfFile(file) {
 }
 
 function scriptPreviewSrc(script) {
+  if (script?.thumb) return script.thumb;
   if (script?.preview) return script.preview;
   const file = script?.file || "";
   if (isPdfFile(file)) return file.replace(/\.pdf$/i, ".png");
@@ -597,8 +685,13 @@ function clearScriptSheet() {
   pdfWrap.hidden = true;
 }
 
-async function openScriptDetail(script, tab = "sheet") {
+let lastFocused = null;
+
+function openScriptDetail(script, tab = "sheet") {
   activeScript = script;
+  if (!document.getElementById("script-modal").classList.contains("show")) {
+    lastFocused = document.activeElement;
+  }
   const modal = document.getElementById("script-modal");
   const jsonTab = document.querySelector('.modal-tab[data-tab="json"]');
 
@@ -607,12 +700,13 @@ async function openScriptDetail(script, tab = "sheet") {
   jsonTab.disabled = !script.json;
   jsonTab.classList.toggle("json-tab-disabled", !script.json);
 
-  await loadGrimoirePanel(script);
-
   if (tab === "json" && !script.json) tab = "sheet";
   switchScriptTab(tab);
   modal.classList.add("show");
   document.body.style.overflow = "hidden";
+  modal.querySelector(".modal-close").focus();
+
+  loadGrimoirePanel(script);
 }
 
 function openScript(file, title) {
@@ -627,12 +721,19 @@ function openScript(file, title) {
   openScriptDetail(script, "sheet");
 }
 
+function isModalOpen() {
+  return document.getElementById("script-modal").classList.contains("show");
+}
+
 function closeScriptModal() {
+  if (!isModalOpen()) return;
   document.getElementById("script-modal").classList.remove("show");
   clearScriptSheet();
   document.body.style.overflow = "";
   activeScript = null;
   activeScriptJson = null;
+  if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+  lastFocused = null;
 }
 
 function scriptKey(scriptOrFile) {
@@ -685,9 +786,11 @@ function renderFeaturedItem(script) {
   const item = document.createElement("article");
   item.className = "featured-script-item";
 
-  const thumb = document.createElement("div");
+  const thumb = document.createElement("button");
+  thumb.type = "button";
   thumb.className = "featured-thumb";
   thumb.title = `Open ${script.title}`;
+  thumb.setAttribute("aria-label", `Open ${script.title} script sheet`);
 
   mountScriptPreview(thumb, script, {
     alt: script.title,
@@ -763,8 +866,10 @@ function renderScriptGrid(scripts) {
     const card = document.createElement("article");
     card.className = "script-card" + (script.current ? " current" : "");
 
-    const thumb = document.createElement("div");
+    const thumb = document.createElement("button");
+    thumb.type = "button";
     thumb.className = "script-card-thumb";
+    thumb.setAttribute("aria-label", `Open ${script.title} script sheet`);
 
     mountScriptPreview(thumb, script, {
       lazy: true,
@@ -813,36 +918,46 @@ function filterScripts(query) {
 async function enrichScriptsWithRoles() {
   await Promise.all(
     allScripts.map(async (script) => {
-      if (!script.json) {
-        script.roles = [];
-        return;
+      let ids = Array.isArray(script.roles) ? script.roles : null;
+      if (!ids) {
+        const data = await fetchScriptJson(script);
+        ids = data ? roleIdsFromJson(data) : [];
       }
-      try {
-        const res = await fetch(script.json);
-        if (!res.ok) {
-          script.roles = [];
-          return;
-        }
-        const data = await res.json();
-        script.roles = Array.isArray(data)
-          ? data.filter((item) => typeof item === "string").map((id) => getCharacter(id))
-          : [];
-      } catch {
-        script.roles = [];
-      }
+      script.roles = ids.map((id) => getCharacter(id));
     })
   );
+}
+
+// Settings lines in current-script.txt:
+//   date: 2026-10-22   one-off game night
+//   days: wed, sat     regular game days
+function applyScheduleSetting(key, value) {
+  if (key === "date") {
+    const m = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) gameDate = new Date(+m[1], +m[2] - 1, +m[3]);
+  } else if (key === "days") {
+    const days = value
+      .split(/[,\s]+/)
+      .map((d) => DAY_SHORT.findIndex((s) => s.toLowerCase() === d.slice(0, 3).toLowerCase()))
+      .filter((i) => i >= 0);
+    if (days.length) GAME_DAYS = days;
+  }
 }
 
 async function loadCurrentScript() {
   try {
     const res = await fetch("current-script.txt");
     const text = await res.text();
-    currentScriptFiles = text
+    const lines = text
       .split(/\r?\n/)
       .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith("#"))
-      .map((line) => line.toLowerCase());
+      .filter((line) => line && !line.startsWith("#"));
+    const setting = /^([a-z]+)\s*:\s*(.*)$/i;
+    lines.forEach((line) => {
+      const m = line.match(setting);
+      if (m) applyScheduleSetting(m[1].toLowerCase(), m[2]);
+    });
+    currentScriptFiles = lines.filter((line) => !setting.test(line)).map((line) => line.toLowerCase());
   } catch {
     currentScriptFiles = [];
   }
@@ -853,7 +968,8 @@ async function loadScripts() {
 
   try {
     const res = await fetch("data/scripts.json");
-    allScripts = await res.json();
+    const data = await res.json();
+    allScripts = Array.isArray(data) ? data : [];
   } catch {
     allScripts = [];
   }
@@ -896,7 +1012,27 @@ document.getElementById("script-modal").addEventListener("click", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeScriptModal();
+  if (!isModalOpen()) return;
+  if (e.key === "Escape") {
+    closeScriptModal();
+    return;
+  }
+  if (e.key !== "Tab") return;
+  const focusable = [
+    ...document.querySelectorAll(
+      "#script-modal button:not([disabled]), #script-modal a[href], #script-modal iframe:not([hidden])"
+    ),
+  ].filter((el) => el.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
 });
 
 loadScripts();
