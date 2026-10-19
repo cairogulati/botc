@@ -15,17 +15,50 @@ const DISGUISES = {
 
 let game = loadGame();
 let grimoireOpen = false;
-let selectedSeat = null;
 let dealCard = null;
 
 function newGame(scriptFile = null, selection = []) {
-  return { phase: "setup", script: scriptFile, selection, players: [], bluffs: [] };
+  return {
+    phase: "setup",
+    script: scriptFile,
+    selection,
+    players: [],
+    bluffs: [],
+    fabled: [],
+    clock: 0, // 0 = Night 1, 1 = Day 1, 2 = Night 2, …
+    nightDone: [],
+    votes: [],
+    executions: {},
+  };
+}
+
+function makePlayer(role, extra = {}) {
+  return {
+    id: Math.random().toString(36).slice(2, 10),
+    role,
+    shownAs: null,
+    name: "",
+    taken: false,
+    dead: false,
+    ghostUsed: false,
+    alignment: null, // null = the character's team decides
+    reminders: [],
+    note: "",
+    ...extra,
+  };
+}
+
+// Fill in fields added after a game was saved by an older version.
+function normalizeGame(saved) {
+  const g = { ...newGame(), ...saved };
+  g.players = g.players.map((p) => ({ ...makePlayer(p.role), ...p }));
+  return g;
 }
 
 function loadGame() {
   try {
     const saved = JSON.parse(localStorage.getItem(GAME_KEY) || "null");
-    if (saved && Array.isArray(saved.selection) && Array.isArray(saved.players)) return saved;
+    if (saved && Array.isArray(saved.selection) && Array.isArray(saved.players)) return normalizeGame(saved);
   } catch {
     /* ignore */
   }
@@ -51,6 +84,10 @@ function shuffle(arr) {
 
 function teamSide(team) {
   return team === "minion" || team === "demon" ? "evil" : "good";
+}
+
+function playerSide(p) {
+  return p.alignment || teamSide(getCharacter(p.role).team);
 }
 
 function gameScript() {
@@ -251,7 +288,7 @@ function startDealing() {
       shownAs = pickUnused(options, used, 1)[0] || null;
       if (shownAs) used.add(shownAs);
     }
-    return { role, shownAs, name: "", taken: false, dead: false, ghostUsed: false, note: "" };
+    return makePlayer(role, { shownAs });
   });
   rollBluffs();
   game.phase = "deal";
@@ -339,153 +376,6 @@ function closeDealCard() {
   renderDeal();
 }
 
-// ---------- Grimoire ----------
-
-function openGrimoire() {
-  if (!confirm("Storyteller only — make sure no players can see the screen.")) return;
-  grimoireOpen = true;
-  selectedSeat = null;
-  renderGame();
-}
-
-function closeGrimoire() {
-  grimoireOpen = false;
-  selectedSeat = null;
-  renderGame();
-}
-
-function renderGrimoire() {
-  const circle = document.getElementById("grim-circle");
-  const n = game.players.length;
-  const size = n > 12 ? 58 : n > 8 ? 66 : 76;
-  circle.style.setProperty("--token", `${size}px`);
-
-  circle.innerHTML = game.players
-    .map((p, i) => {
-      const c = getCharacter(p.role);
-      const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
-      const x = 50 + 41 * Math.cos(angle);
-      const y = 50 + 41 * Math.sin(angle);
-      const classes = [
-        "grim-token",
-        `grim-token-${teamSide(c.team)}`,
-        p.dead ? "dead" : "",
-        selectedSeat === i ? "selected" : "",
-      ].join(" ");
-      return `
-        <button type="button" class="${classes}" data-seat="${i}" style="left:${x}%;top:${y}%">
-          <span class="grim-token-role">${escapeHtml(c.name)}</span>
-          ${p.dead ? `<span class="grim-token-ghost" title="${p.ghostUsed ? "Ghost vote used" : "Ghost vote available"}">${p.ghostUsed ? "✕" : "👻"}</span>` : ""}
-          <span class="grim-token-name">${escapeHtml(p.name || `Card ${i + 1}`)}</span>
-        </button>`;
-    })
-    .join("");
-
-  const alive = game.players.filter((p) => !p.dead).length;
-  const ghosts = game.players.filter((p) => p.dead && !p.ghostUsed).length;
-  document.getElementById("grim-center").innerHTML = `
-    <span class="grim-center-big">${alive}</span>
-    <span>alive</span>
-    <span class="grim-center-small">${ghosts} ghost vote${ghosts === 1 ? "" : "s"} · ${Math.ceil(alive / 2)} to execute</span>`;
-
-  circle.querySelectorAll(".grim-token").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const seat = parseInt(btn.dataset.seat, 10);
-      selectedSeat = selectedSeat === seat ? null : seat;
-      renderGrimoire();
-    });
-  });
-
-  document.getElementById("grim-bluffs").innerHTML = game.bluffs.length
-    ? game.bluffs.map((id) => `<span class="grim-bluff">${escapeHtml(getCharacter(id).name)}</span>`).join("")
-    : '<span class="json-pane-lead">No unused good characters left.</span>';
-
-  renderSeatPanel();
-}
-
-function renderSeatPanel() {
-  const panel = document.getElementById("grim-seat");
-  if (selectedSeat === null || !game.players[selectedSeat]) {
-    panel.hidden = true;
-    return;
-  }
-  panel.hidden = false;
-  const p = game.players[selectedSeat];
-  const script = gameScript();
-  const grouped = groupRoles(scriptRoleIds(script));
-  const options = DEALT_TEAMS.filter((t) => grouped[t].length)
-    .map(
-      (t) =>
-        `<optgroup label="${TEAM_LABELS[t]}">${grouped[t]
-          .map((c) => `<option value="${escapeHtml(c.id)}"${c.id === p.role ? " selected" : ""}>${escapeHtml(c.name)}</option>`)
-          .join("")}</optgroup>`
-    )
-    .join("");
-  const shown = p.shownAs ? getCharacter(p.shownAs).name : null;
-  const ability = getCharacter(p.role).ability;
-
-  panel.innerHTML = `
-    <div class="grim-seat-head">
-      <h3>Seat ${selectedSeat + 1}</h3>
-      <button type="button" class="modal-close" id="grim-seat-close" aria-label="Close">✕</button>
-    </div>
-    ${ability ? `<p class="grim-seat-ability">${escapeHtml(ability)}</p>` : ""}
-    ${shown ? `<p class="grim-seat-disguise">Thinks they are the <strong>${escapeHtml(shown)}</strong>.</p>` : ""}
-    <label class="grim-field">
-      <span>Name</span>
-      <input type="text" id="grim-seat-name" class="search-input game-input" value="${escapeHtml(p.name)}" autocomplete="off">
-    </label>
-    <label class="grim-field">
-      <span>Character</span>
-      <select id="grim-seat-role" class="search-input game-input">${options}</select>
-    </label>
-    <div class="btn-row">
-      <button type="button" class="btn ${p.dead ? "btn-primary" : "btn-ghost"}" id="grim-seat-dead">${p.dead ? "💀 Dead" : "Alive"}</button>
-      <button type="button" class="btn btn-ghost" id="grim-seat-ghost"${p.dead ? "" : " disabled"}>${p.ghostUsed ? "Ghost vote used" : "Ghost vote available"}</button>
-    </div>
-    <label class="grim-field">
-      <span>Notes</span>
-      <textarea id="grim-seat-note" class="search-input game-input" rows="3" placeholder="Poisoned night 2, told they're the Chef…">${escapeHtml(p.note)}</textarea>
-    </label>`;
-
-  panel.querySelector("#grim-seat-close").addEventListener("click", () => {
-    selectedSeat = null;
-    renderGrimoire();
-  });
-  panel.querySelector("#grim-seat-name").addEventListener("change", (e) => {
-    p.name = e.target.value.trim();
-    saveGame();
-    renderGrimoire();
-  });
-  panel.querySelector("#grim-seat-role").addEventListener("change", (e) => {
-    p.role = e.target.value;
-    if (!DISGUISES[p.role]) p.shownAs = null;
-    saveGame();
-    renderGrimoire();
-  });
-  panel.querySelector("#grim-seat-dead").addEventListener("click", () => {
-    p.dead = !p.dead;
-    if (!p.dead) p.ghostUsed = false;
-    saveGame();
-    renderGrimoire();
-  });
-  panel.querySelector("#grim-seat-ghost").addEventListener("click", () => {
-    p.ghostUsed = !p.ghostUsed;
-    saveGame();
-    renderGrimoire();
-  });
-  panel.querySelector("#grim-seat-note").addEventListener("input", (e) => {
-    p.note = e.target.value;
-    saveGame();
-  });
-}
-
-function rerollBluffs() {
-  rollBluffs();
-  saveGame();
-  renderGrimoire();
-}
-
 // ---------- Page ----------
 
 function renderGame() {
@@ -501,9 +391,7 @@ function renderGame() {
 
 function backToSetup() {
   if (!confirm("Go back to character selection? Everyone's cards will be cleared.")) return;
-  game.phase = "setup";
-  game.players = [];
-  game.bluffs = [];
+  game = newGame(game.script, game.selection);
   grimoireOpen = false;
   saveGame();
   renderGame();

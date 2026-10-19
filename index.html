@@ -282,22 +282,66 @@
   </section>
 
   <section id="game-grimoire" hidden>
-    <div class="grim-wrap">
-      <div id="grim-circle" class="grim-circle"></div>
-      <div id="grim-center" class="grim-center"></div>
-    </div>
-    <div id="grim-seat" class="card grim-seat" hidden></div>
-
-    <div class="card">
-      <div class="grim-bluffs-head">
-        <h3>Demon bluffs</h3>
-        <button type="button" class="setup-reroll" onclick="rerollBluffs()">🎲 Re-roll</button>
+    <div class="grim-topbar">
+      <div class="grim-clock">
+        <button type="button" class="grim-clock-btn" onclick="stepClock(-1)" aria-label="Previous phase">‹</button>
+        <span id="grim-clock-label">🌙 Night 1</span>
+        <button type="button" class="grim-clock-btn" onclick="stepClock(1)" aria-label="Next phase">›</button>
       </div>
-      <div id="grim-bluffs" class="grim-bluffs"></div>
     </div>
 
-    <div class="btn-row game-footer-actions">
-      <button type="button" class="btn btn-primary" onclick="closeGrimoire()">Hide grimoire</button>
+    <div id="grim-town-banner" class="grim-town-banner" hidden>
+      <span>👁 Town square: characters are hidden</span>
+      <button type="button" class="btn btn-ghost" onclick="leaveTownSquare()">Back to grimoire</button>
+    </div>
+
+    <div id="grim-tabs" class="modal-tabs grim-tabs" role="tablist">
+      <button type="button" class="modal-tab active" data-grim-tab="circle">Circle</button>
+      <button type="button" class="modal-tab" data-grim-tab="night">Night</button>
+      <button type="button" class="modal-tab" data-grim-tab="votes">Votes</button>
+      <button type="button" class="modal-tab" data-grim-tab="info">Info</button>
+    </div>
+
+    <div id="grim-pane-circle">
+      <div id="grim-tools" class="grim-tools">
+        <button type="button" class="game-chip" id="grim-swap-btn" onclick="toggleSwapMode()">↔ Rearrange seats</button>
+        <button type="button" class="game-chip" onclick="addTraveller()">＋ Traveller</button>
+        <button type="button" class="game-chip" onclick="showTownSquare()">👁 Town square</button>
+      </div>
+      <p id="grim-swap-hint" class="grim-swap-hint" hidden>Tap two players to swap their seats. Tap “Rearrange seats” again when done.</p>
+      <div class="grim-wrap">
+        <div id="grim-circle" class="grim-circle"></div>
+        <div id="grim-center" class="grim-center"></div>
+      </div>
+      <div id="grim-seat" class="card grim-seat" hidden></div>
+    </div>
+
+    <div id="grim-pane-night" hidden>
+      <ol id="grim-night-list" class="night-list"></ol>
+    </div>
+
+    <div id="grim-pane-votes" hidden></div>
+
+    <div id="grim-pane-info" hidden>
+      <div class="card">
+        <div class="grim-bluffs-head">
+          <h3>Demon bluffs</h3>
+          <button type="button" class="setup-reroll" onclick="rerollBluffs()">🎲 Re-roll</button>
+        </div>
+        <div id="grim-bluffs" class="grim-bluffs"></div>
+      </div>
+      <div class="card">
+        <h3>Fabled</h3>
+        <div id="grim-fabled" class="grim-fabled"></div>
+      </div>
+      <div class="card">
+        <h3>Jinxes</h3>
+        <ul id="grim-jinxes" class="grim-jinxes"></ul>
+      </div>
+    </div>
+
+    <div id="grim-footer" class="btn-row game-footer-actions">
+      <button type="button" class="btn btn-primary" onclick="closeGrimoire()">Back to cards</button>
       <button type="button" class="btn btn-ghost" onclick="newGameFromScratch()">New game</button>
     </div>
   </section>
@@ -454,6 +498,7 @@
 
 <script src="js/app.js"></script>
 <script src="js/game.js"></script>
+<script src="js/grimoire.js"></script>
 <script src="js/library.js"></script>
 </body>
 </html>

@@ -2214,3 +2214,334 @@ select.game-input {
 .role-group-loric .role-group-team {
   color: var(--gold);
 }
+
+/* Grimoire tools */
+.grim-topbar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.grim-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  font-family: "Cinzel", Georgia, serif;
+  font-weight: 600;
+}
+
+#grim-clock-label {
+  min-width: 120px;
+  text-align: center;
+}
+
+.grim-clock-btn {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.grim-tabs {
+  margin-bottom: 14px;
+}
+
+.grim-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.grim-tools .game-chip.active {
+  color: var(--text);
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.grim-swap-hint {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--gold);
+}
+
+.grim-town-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--gold-soft);
+  font-size: 0.85rem;
+}
+
+.grim-token-public {
+  border-color: var(--border-strong);
+  font-size: 1.4rem;
+}
+
+.grim-token-traveler {
+  border-style: dashed;
+}
+
+.grim-reminders {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.grim-reminder {
+  max-width: 76px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.6rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grim-reminder-removable {
+  max-width: none;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.grim-seat-reminders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.grim-add-reminder {
+  margin-top: 8px;
+}
+
+.grim-seat-toggles {
+  margin-bottom: 14px;
+}
+
+.grim-align-evil {
+  color: #e86a7a;
+  border-color: rgba(196, 45, 77, 0.6);
+}
+
+.grim-align-good {
+  color: #6ecfae;
+  border-color: rgba(61, 143, 116, 0.6);
+}
+
+.grim-seat-jinx {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  color: #e8b06a;
+}
+
+.grim-remove {
+  margin-top: 4px;
+  color: #e86a7a;
+  border-color: rgba(196, 45, 77, 0.5);
+}
+
+.grim-muted {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+/* Night order */
+.night-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.night-step label {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.night-step.special label {
+  background: var(--gold-soft);
+  border-color: var(--border-strong);
+}
+
+.night-step input {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--gold);
+}
+
+.night-step.done label {
+  opacity: 0.45;
+}
+
+.night-step-body {
+  display: grid;
+  gap: 3px;
+}
+
+.night-step-name {
+  font-weight: 600;
+}
+
+.night-actors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.night-actor {
+  font-size: 0.8rem;
+  color: var(--gold);
+}
+
+.night-actor.dead {
+  color: var(--text-dim);
+}
+
+.night-step-text {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* Votes */
+.vote-pickers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.vote-count.enough,
+.vote-result.enough {
+  color: #6ecfae;
+}
+
+.vote-chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.vote-actions {
+  margin-top: 14px;
+}
+
+.vote-actions .btn:disabled {
+  opacity: 0.45;
+}
+
+.vote-history {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.vote-history li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.vote-history li > span:first-child {
+  flex: 1;
+}
+
+.vote-result {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.vote-remove {
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.vote-block {
+  margin: 8px 0 12px;
+}
+
+/* Info */
+.grim-fabled {
+  display: grid;
+  gap: 10px;
+}
+
+.grim-fabled-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.grim-fabled-item p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.grim-jinxes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.grim-jinxes li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.grim-jinxes li:last-child {
+  border-bottom: 0;
+}
+
+.grim-jinxes li.live strong {
+  color: #e8b06a;
+}
+
+.grim-jinxes p {
+  margin: 4px 0 0;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
