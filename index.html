@@ -55,9 +55,9 @@
       <span class="icon">📜</span>
       <span>Scripts</span>
     </button>
-    <button class="quick-btn" onclick="show('faq')">
-      <span class="icon">❓</span>
-      <span>FAQ</span>
+    <button class="quick-btn" onclick="show('game')">
+      <span class="icon">🎭</span>
+      <span>Game</span>
     </button>
   </div>
 
@@ -147,19 +147,7 @@
               <th>Demon</th>
             </tr>
           </thead>
-          <tbody>
-            <tr data-players="5"><td>5</td><td>3</td><td>0</td><td>1</td><td>1</td></tr>
-            <tr data-players="6"><td>6</td><td>3</td><td>1</td><td>1</td><td>1</td></tr>
-            <tr data-players="7"><td>7</td><td>5</td><td>0</td><td>1</td><td>1</td></tr>
-            <tr data-players="8"><td>8</td><td>5</td><td>1</td><td>1</td><td>1</td></tr>
-            <tr data-players="9"><td>9</td><td>5</td><td>2</td><td>1</td><td>1</td></tr>
-            <tr data-players="10"><td>10</td><td>7</td><td>0</td><td>2</td><td>1</td></tr>
-            <tr data-players="11"><td>11</td><td>7</td><td>1</td><td>2</td><td>1</td></tr>
-            <tr data-players="12"><td>12</td><td>7</td><td>2</td><td>2</td><td>1</td></tr>
-            <tr data-players="13"><td>13</td><td>9</td><td>0</td><td>3</td><td>1</td></tr>
-            <tr data-players="14"><td>14</td><td>9</td><td>1</td><td>3</td><td>1</td></tr>
-            <tr data-players="15"><td>15</td><td>9</td><td>2</td><td>3</td><td>1</td></tr>
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
     </details>
@@ -183,7 +171,7 @@
 
   <div class="scripts-toolbar">
     <label class="sr-only" for="script-search">Search scripts</label>
-    <input type="search" id="script-search" class="search-input" placeholder="Search scripts or roles…" autocomplete="off">
+    <input type="search" id="script-search" class="search-input game-input" placeholder="Search scripts or roles…" autocomplete="off">
   </div>
 
   <div id="script-list" class="script-grid"></div>
@@ -227,6 +215,70 @@
   </div>
 </div>
 
+<!-- Game -->
+<div id="game" class="page">
+  <h2 class="page-heading">Game Night</h2>
+
+  <section id="game-setup">
+    <p class="page-lead">Storyteller: choose the characters in play, then hand the phone round so everyone draws a card.</p>
+
+    <div class="card">
+      <label class="grim-field">
+        <span>Script</span>
+        <select id="game-script" class="search-input game-input"></select>
+      </label>
+      <p class="game-label">Players</p>
+      <div class="player-picker player-picker-compact" role="group" aria-label="Number of players"></div>
+      <div class="btn-row game-setup-actions">
+        <button type="button" class="btn btn-ghost" onclick="randomFillSelection()">🎲 Random setup</button>
+        <button type="button" class="btn btn-ghost" onclick="clearSelection()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Characters in play</h3>
+      <p class="setup-lead">Tap to select or deselect.</p>
+      <div id="game-chips" class="game-chips"></div>
+    </div>
+
+    <div class="game-sticky">
+      <div id="game-summary"></div>
+      <button type="button" class="btn btn-primary" id="game-deal-btn" onclick="startDealing()" disabled>Deal cards →</button>
+    </div>
+  </section>
+
+  <section id="game-deal" hidden>
+    <p class="page-lead">Pass the phone round. Each player taps a card, enters their name and checks their character in secret.</p>
+    <p class="game-label" id="deal-progress"></p>
+    <div id="deal-grid" class="deal-grid"></div>
+    <div class="btn-row game-footer-actions">
+      <button type="button" class="btn btn-primary" onclick="openGrimoire()">📖 Storyteller grimoire</button>
+      <button type="button" class="btn btn-ghost" onclick="backToSetup()">Back to setup</button>
+    </div>
+  </section>
+
+  <section id="game-grimoire" hidden>
+    <div class="grim-wrap">
+      <div id="grim-circle" class="grim-circle"></div>
+      <div id="grim-center" class="grim-center"></div>
+    </div>
+    <div id="grim-seat" class="card grim-seat" hidden></div>
+
+    <div class="card">
+      <div class="grim-bluffs-head">
+        <h3>Demon bluffs</h3>
+        <button type="button" class="setup-reroll" onclick="rerollBluffs()">🎲 Re-roll</button>
+      </div>
+      <div id="grim-bluffs" class="grim-bluffs"></div>
+    </div>
+
+    <div class="btn-row game-footer-actions">
+      <button type="button" class="btn btn-primary" onclick="closeGrimoire()">Hide grimoire</button>
+      <button type="button" class="btn btn-ghost" onclick="newGameFromScratch()">New game</button>
+    </div>
+  </section>
+</div>
+
 <!-- More -->
 <div id="more" class="page">
   <h2 class="page-heading">More</h2>
@@ -238,7 +290,7 @@
       <li><span class="dot done"></span> Script &amp; grimoire JSON</li>
       <li><span class="dot done"></span> Player count setup</li>
       <li><span class="dot done"></span> Random setup generator</li>
-      <li><span class="dot"></span> Storyteller tools</li>
+      <li><span class="dot done"></span> Storyteller tools &amp; grimoire</li>
       <li><span class="dot"></span> Offline PWA support</li>
       <li><span class="dot done"></span> Role search &amp; filters</li>
     </ul>
@@ -308,6 +360,42 @@
   </div>
 </div>
 
+<!-- Card draw dialog -->
+<div id="deal-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="deal-card-title">
+  <div class="modal-panel deal-panel">
+    <div class="modal-header">
+      <h2 class="modal-title" id="deal-card-title">Card</h2>
+      <button class="modal-close" onclick="closeDealCard()" aria-label="Close">✕</button>
+    </div>
+
+    <div id="deal-step-name" class="deal-step">
+      <label class="grim-field">
+        <span>Your name</span>
+        <input type="text" id="deal-name" class="search-input game-input" autocomplete="off" maxlength="30">
+      </label>
+      <button type="button" class="btn btn-primary" id="deal-reveal-btn" onclick="revealDealCard()" disabled>Reveal my character</button>
+      <p class="setup-generate-hint">Make sure nobody else can see the screen.</p>
+    </div>
+
+    <div id="deal-step-taken" class="deal-step" hidden>
+      <p>This card was taken by <strong id="deal-taken-name"></strong>.</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" onclick="revealDealCard()">That's me — show again</button>
+        <button type="button" class="btn btn-ghost" onclick="closeDealCard()">Cancel</button>
+      </div>
+    </div>
+
+    <div id="deal-step-reveal" class="deal-step" hidden>
+      <div id="deal-reveal" class="deal-reveal">
+        <p id="deal-reveal-hello" class="deal-reveal-hello"></p>
+        <p id="deal-reveal-role" class="deal-reveal-role"></p>
+        <span id="deal-reveal-team" class="badge"></span>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="closeDealCard()">Hide &amp; pass the phone on</button>
+    </div>
+  </div>
+</div>
+
 <nav class="bottom-nav" aria-label="Main navigation">
   <button class="active" data-page="home" onclick="show('home', this)">
     <span class="nav-icon">🏠</span>
@@ -321,6 +409,10 @@
     <span class="nav-icon">📜</span>
     <span>Scripts</span>
   </button>
+  <button data-page="game" onclick="show('game', this)">
+    <span class="nav-icon">🎭</span>
+    <span>Game</span>
+  </button>
   <button data-page="faq" onclick="show('faq', this)">
     <span class="nav-icon">❓</span>
     <span>FAQ</span>
@@ -332,5 +424,6 @@
 </nav>
 
 <script src="js/app.js"></script>
+<script src="js/game.js"></script>
 </body>
 </html>
