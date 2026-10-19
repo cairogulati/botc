@@ -25,6 +25,7 @@ let grimTab = "circle";
 let grimSelected = null; // player id
 let swapMode = false;
 let swapFirst = null;
+let armedReminder = null; // reminder picked from the tray, waiting for a player tap
 let townSquare = false;
 let voteDraft = null;
 let nightSheet = { firstNight: [], otherNight: [] };
@@ -92,6 +93,7 @@ function setGrimTab(tab) {
 
 function showTownSquare() {
   townSquare = true;
+  armedReminder = null;
   grimSelected = null;
   swapMode = false;
   renderGrimoire();
@@ -159,12 +161,21 @@ function renderCircle() {
       const ghost = p.dead
         ? `<span class="grim-token-ghost" title="${p.ghostUsed ? "Ghost vote used" : "Ghost vote available"}">${p.ghostUsed ? "✕" : "👻"}</span>`
         : "";
-      const reminders =
-        !townSquare && p.reminders.length
-          ? `<div class="grim-reminders" style="${pos(25)}">${p.reminders
-              .map((r) => `<span class="grim-reminder">${escapeHtml(r.text)}</span>`)
-              .join("")}</div>`
-          : "";
+      const reminders = townSquare
+        ? ""
+        : p.reminders
+            .map((r, k) => {
+              // Up to 4 per ring, fanned out sideways, rings moving inwards.
+              const ring = Math.floor(k / 4);
+              const inRing = Math.min(4, p.reminders.length - ring * 4);
+              const radius = 22 - ring * 8;
+              const a = angle + ((k % 4) - (inRing - 1) / 2) * (9 / radius);
+              const style = `left:${50 + radius * Math.cos(a)}%;top:${50 + radius * Math.sin(a)}%`;
+              const team = r.from ? teamSide(getCharacter(r.from).team) : "custom";
+              const from = r.from ? getCharacter(r.from).name : "Custom";
+              return `<button type="button" class="grim-rem-token grim-rem-${team}" style="${style}" data-pid="${p.id}" data-rem="${k}" title="${escapeHtml(from)}: ${escapeHtml(r.text)} (tap to remove)">${escapeHtml(r.text)}</button>`;
+            })
+            .join("");
       return `
         <button type="button" class="${classes}" data-id="${p.id}" style="${pos(41)}">
           ${townSquare ? (p.dead ? "💀" : "") : `<span class="grim-token-role">${escapeHtml(c.name)}</span>`}
@@ -177,19 +188,37 @@ function renderCircle() {
   const alive = aliveCount();
   const ghosts = game.players.filter((p) => p.dead && !p.ghostUsed).length;
   document.getElementById("grim-center").innerHTML = `
-    <span class="grim-center-big">${alive}</span>
-    <span>alive</span>
-    <span class="grim-center-small">${ghosts} ghost vote${ghosts === 1 ? "" : "s"} · ${votesNeeded()} to execute</span>`;
+    <span><strong>${alive}</strong> alive</span>
+    <span><strong>${ghosts}</strong> ghost vote${ghosts === 1 ? "" : "s"}</span>
+    <span><strong>${votesNeeded()}</strong> to execute</span>`;
 
   circle.querySelectorAll(".grim-token").forEach((btn) => {
     btn.addEventListener("click", () => onTokenClick(btn.dataset.id));
   });
+  circle.querySelectorAll(".grim-rem-token").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const p = playerById(btn.dataset.pid);
+      if (!p) return;
+      p.reminders.splice(parseInt(btn.dataset.rem, 10), 1);
+      saveGame();
+      renderCircle();
+    });
+  });
 
+  renderReminderTray();
   renderSeatPanel();
 }
 
 function onTokenClick(id) {
   if (townSquare) return;
+  if (armedReminder) {
+    const p = playerById(id);
+    if (p) p.reminders.push(armedReminder);
+    armedReminder = null;
+    saveGame();
+    renderCircle();
+    return;
+  }
   if (swapMode) {
     if (!swapFirst) {
       swapFirst = id;
@@ -209,7 +238,59 @@ function onTokenClick(id) {
   renderCircle();
 }
 
+function renderReminderTray() {
+  const tray = document.getElementById("grim-tray");
+  const hint = document.getElementById("grim-tray-hint");
+  tray.hidden = townSquare;
+  hint.hidden = townSquare;
+  if (townSquare) return;
+
+  const options = reminderOptions();
+  tray.innerHTML =
+    options
+      .map((o, i) => {
+        const armed = armedReminder && armedReminder.from === o.from && armedReminder.text === o.text;
+        return `<button type="button" class="grim-tray-token grim-rem-${teamSide(getCharacter(o.from).team)}${armed ? " armed" : ""}" data-opt="${i}" title="${escapeHtml(getCharacter(o.from).name)}">
+          <span class="grim-tray-text">${escapeHtml(o.text)}</span>
+          <span class="grim-tray-from">${escapeHtml(getCharacter(o.from).name)}</span>
+        </button>`;
+      })
+      .join("") +
+    `<button type="button" class="grim-tray-token grim-rem-custom${armedReminder && !armedReminder.from ? " armed" : ""}" data-opt="custom">
+      <span class="grim-tray-text">＋</span><span class="grim-tray-from">Custom</span>
+    </button>`;
+
+  hint.textContent = armedReminder
+    ? `Tap a player to place “${armedReminder.text}”. Tap the token again to cancel.`
+    : "Tap a reminder, then tap a player. Tap a placed reminder to remove it.";
+  hint.classList.toggle("armed", !!armedReminder);
+
+  tray.querySelectorAll("[data-opt]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      let pick;
+      if (btn.dataset.opt === "custom") {
+        if (armedReminder && !armedReminder.from) {
+          armedReminder = null;
+          renderReminderTray();
+          return;
+        }
+        const text = (prompt("Reminder text") || "").trim().slice(0, 16);
+        if (!text) return;
+        pick = { from: null, text };
+      } else {
+        pick = options[parseInt(btn.dataset.opt, 10)];
+      }
+      const same = armedReminder && armedReminder.from === pick.from && armedReminder.text === pick.text;
+      armedReminder = same ? null : pick;
+      swapMode = false;
+      swapFirst = null;
+      renderCircle();
+    });
+  });
+}
+
 function toggleSwapMode() {
+  armedReminder = null;
   swapMode = !swapMode;
   swapFirst = null;
   grimSelected = null;
@@ -260,9 +341,6 @@ function renderSeatPanel() {
   const c = getCharacter(p.role);
   const shown = p.shownAs ? getCharacter(p.shownAs).name : null;
   const side = playerSide(p);
-  const remOptions = reminderOptions()
-    .map((o, i) => `<option value="${i}">${escapeHtml(getCharacter(o.from).name)}: ${escapeHtml(o.text)}</option>`)
-    .join("");
 
   panel.innerHTML = `
     <div class="grim-seat-head">
@@ -277,27 +355,6 @@ function renderSeatPanel() {
       <button type="button" class="btn ${p.dead ? "btn-primary" : "btn-ghost"}" data-act="dead">${p.dead ? "💀 Dead" : "Alive"}</button>
       <button type="button" class="btn btn-ghost" data-act="ghost"${p.dead ? "" : " disabled"}>${p.ghostUsed ? "Ghost vote used" : "Ghost vote ready"}</button>
       <button type="button" class="btn btn-ghost grim-align-${side}" data-act="align">${side === "evil" ? "Evil" : "Good"}${p.alignment ? " *" : ""}</button>
-    </div>
-
-    <div class="grim-field">
-      <span>Reminders</span>
-      <div class="grim-seat-reminders">
-        ${
-          p.reminders
-            .map(
-              (r, i) =>
-                `<button type="button" class="grim-reminder grim-reminder-removable" data-rem="${i}" title="Remove">${escapeHtml(r.text)} ✕</button>`
-            )
-            .join("") || '<span class="grim-muted">None</span>'
-        }
-      </div>
-      <div class="grim-add-reminder">
-        <select id="grim-rem-select" class="search-input game-input">
-          <option value="">Add a reminder…</option>
-          ${remOptions}
-          <option value="custom">Custom…</option>
-        </select>
-      </div>
     </div>
 
     <label class="grim-field">
@@ -339,24 +396,6 @@ function renderSeatPanel() {
       }
       rerender();
     });
-  });
-  panel.querySelectorAll("[data-rem]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      p.reminders.splice(parseInt(btn.dataset.rem, 10), 1);
-      rerender();
-    });
-  });
-  panel.querySelector("#grim-rem-select").addEventListener("change", (e) => {
-    const v = e.target.value;
-    if (!v) return;
-    if (v === "custom") {
-      const text = (prompt("Reminder text") || "").trim().slice(0, 24);
-      if (text) p.reminders.push({ from: null, text });
-    } else {
-      const o = reminderOptions()[parseInt(v, 10)];
-      if (o) p.reminders.push(o);
-    }
-    rerender();
   });
   panel.querySelector("#grim-seat-name").addEventListener("change", (e) => {
     p.name = e.target.value.trim();
