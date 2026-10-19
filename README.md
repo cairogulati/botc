@@ -42,7 +42,15 @@ The game is saved in the phone's browser, so refreshing the page doesn't lose it
 
 ## Characters
 
-`data/characters.json` maps each character ID to its name and team (`townsfolk`, `outsider`, `minion`, `demon`, `traveler` or `fabled`). The random setup generator only draws characters it can find here, so add any new character a script uses. IDs are matched ignoring case, spaces, hyphens and underscores.
+`data/characters.json` holds every character's name, team, ability, flavour text and Storyteller reminders. It feeds the Library tab, the script viewer, the random setup and the game. To refresh it from the official data (for example after new characters are released), run:
+
+```
+python3 tools/update_characters.py
+```
+
+Characters that only exist locally (homebrew) are kept. IDs are matched ignoring case, spaces, hyphens and underscores.
+
+Character text © The Pandemonium Institute.
 
 ## Running locally
 

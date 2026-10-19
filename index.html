@@ -47,13 +47,13 @@
   </section>
 
   <div class="quick-grid">
-    <button class="quick-btn" onclick="show('learn')">
-      <span class="icon">📖</span>
-      <span>Learn</span>
+    <button class="quick-btn" onclick="show('library')">
+      <span class="icon">📚</span>
+      <span>Library</span>
     </button>
-    <button class="quick-btn" onclick="show('scripts')">
-      <span class="icon">📜</span>
-      <span>Scripts</span>
+    <button class="quick-btn" onclick="show('faq')">
+      <span class="icon">❓</span>
+      <span>FAQ</span>
     </button>
     <button class="quick-btn" onclick="show('game')">
       <span class="icon">🎭</span>
@@ -161,6 +161,10 @@
       <li>Ask the Storyteller anything you're unsure about.</li>
       <li>Have fun — lying is encouraged.</li>
     </ul>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="show('faq')">❓ Read the FAQ</button>
+      <button class="btn btn-ghost" onclick="show('library')">📚 Character Library</button>
+    </div>
   </div>
 </div>
 
@@ -213,6 +217,26 @@
       <p>Usually 1–2 hours depending on player count and how much everyone talks. Plan for a full evening.</p>
     </details>
   </div>
+</div>
+
+<!-- Library -->
+<div id="library" class="page">
+  <h2 class="page-heading">Character Library</h2>
+  <p class="page-lead">Every character, what it does, and which of our scripts use it.</p>
+
+  <div class="scripts-toolbar">
+    <label class="sr-only" for="library-search">Search characters</label>
+    <input type="search" id="library-search" class="search-input" placeholder="Search names or abilities…" autocomplete="off">
+  </div>
+  <div id="library-filters" class="game-chip-list lib-filters" role="group" aria-label="Filter by team"></div>
+  <div class="lib-toolbar">
+    <label class="lib-toggle"><input type="checkbox" id="library-ours"> Only characters in our scripts</label>
+    <span id="library-count" class="lib-count"></span>
+  </div>
+
+  <div id="library-list"></div>
+
+  <p class="lib-credit">Character text © The Pandemonium Institute. This is an unofficial fan site.</p>
 </div>
 
 <!-- Game -->
@@ -293,12 +317,16 @@
       <li><span class="dot done"></span> Storyteller tools &amp; grimoire</li>
       <li><span class="dot"></span> Offline PWA support</li>
       <li><span class="dot done"></span> Role search &amp; filters</li>
+      <li><span class="dot done"></span> Character library</li>
     </ul>
   </div>
 
   <div class="card">
     <h3>About</h3>
     <p>A lightweight companion for our Blood on the Clocktower group. Hosted on GitHub Pages — no app install needed.</p>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="show('faq')">❓ FAQ</button>
+    </div>
   </div>
 </div>
 
@@ -390,6 +418,7 @@
         <p id="deal-reveal-hello" class="deal-reveal-hello"></p>
         <p id="deal-reveal-role" class="deal-reveal-role"></p>
         <span id="deal-reveal-team" class="badge"></span>
+        <p id="deal-reveal-ability" class="deal-reveal-ability"></p>
       </div>
       <button type="button" class="btn btn-primary" onclick="closeDealCard()">Hide &amp; pass the phone on</button>
     </div>
@@ -409,13 +438,13 @@
     <span class="nav-icon">📜</span>
     <span>Scripts</span>
   </button>
+  <button data-page="library" onclick="show('library', this)">
+    <span class="nav-icon">📚</span>
+    <span>Library</span>
+  </button>
   <button data-page="game" onclick="show('game', this)">
     <span class="nav-icon">🎭</span>
     <span>Game</span>
-  </button>
-  <button data-page="faq" onclick="show('faq', this)">
-    <span class="nav-icon">❓</span>
-    <span>FAQ</span>
   </button>
   <button data-page="more" onclick="show('more', this)">
     <span class="nav-icon">⚙️</span>
@@ -425,5 +454,6 @@
 
 <script src="js/app.js"></script>
 <script src="js/game.js"></script>
+<script src="js/library.js"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@ let activeGrouped = null;
 let characters = {};
 let charactersPromise = null;
 
-const TEAM_ORDER = ["townsfolk", "outsider", "minion", "demon", "traveler", "fabled", "unknown"];
+const TEAM_ORDER = ["townsfolk", "outsider", "minion", "demon", "traveler", "fabled", "loric", "unknown"];
 const TEAM_LABELS = {
   townsfolk: "Townsfolk",
   outsider: "Outsiders",
@@ -15,6 +15,7 @@ const TEAM_LABELS = {
   demon: "Demon",
   traveler: "Travellers",
   fabled: "Fabled",
+  loric: "Loric",
   unknown: "Unclassified",
 };
 
@@ -189,7 +190,7 @@ function loadCharacters() {
 function getCharacter(rawId) {
   const id = normId(rawId);
   const c = characters[id];
-  if (c) return { id, name: c.name, team: c.team || "unknown" };
+  if (c) return { ...c, id, name: c.name, team: c.team || "unknown" };
   return {
     id,
     name: String(rawId).replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase()),
@@ -198,7 +199,7 @@ function getCharacter(rawId) {
 }
 
 function groupRoles(roles) {
-  const grouped = { townsfolk: [], outsider: [], minion: [], demon: [], traveler: [], fabled: [], unknown: [] };
+  const grouped = { townsfolk: [], outsider: [], minion: [], demon: [], traveler: [], fabled: [], loric: [], unknown: [] };
   roles.forEach((id) => {
     const c = getCharacter(id);
     (grouped[c.team] || grouped.unknown).push(c);
@@ -449,7 +450,10 @@ function renderGroupedRolesHtml(grouped) {
     const items = grouped[team]
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((c) => `<li><code>${escapeHtml(c.name)}</code></li>`)
+      .map(
+        (c) =>
+          `<li><span class="role-name">${escapeHtml(c.name)}</span>${c.ability ? `<span class="role-ability">${escapeHtml(c.ability)}</span>` : ""}</li>`
+      )
       .join("");
     return `
       <div class="role-group role-group-${team}">

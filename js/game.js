@@ -327,6 +327,7 @@ function revealDealCard() {
   const teamEl = document.getElementById("deal-reveal-team");
   teamEl.textContent = `${TEAM_SINGULAR[shown.team] || "Character"} · ${side === "evil" ? "Evil" : "Good"} team`;
   teamEl.className = `badge ${side === "evil" ? "badge-evil" : "badge-good"}`;
+  document.getElementById("deal-reveal-ability").textContent = shown.ability || "";
   document.getElementById("deal-reveal").className = `deal-reveal deal-reveal-${side}`;
   showDealStep("reveal");
 }
@@ -421,12 +422,14 @@ function renderSeatPanel() {
     )
     .join("");
   const shown = p.shownAs ? getCharacter(p.shownAs).name : null;
+  const ability = getCharacter(p.role).ability;
 
   panel.innerHTML = `
     <div class="grim-seat-head">
       <h3>Seat ${selectedSeat + 1}</h3>
       <button type="button" class="modal-close" id="grim-seat-close" aria-label="Close">✕</button>
     </div>
+    ${ability ? `<p class="grim-seat-ability">${escapeHtml(ability)}</p>` : ""}
     ${shown ? `<p class="grim-seat-disguise">Thinks they are the <strong>${escapeHtml(shown)}</strong>.</p>` : ""}
     <label class="grim-field">
       <span>Name</span>
