@@ -289,6 +289,7 @@ function setPlayerCount(count) {
   if (countLabel) countLabel.textContent = count;
 
   renderSetupResult(null);
+  document.dispatchEvent(new CustomEvent("players-changed", { detail: count }));
 }
 
 function renderSetupTable() {
@@ -558,6 +559,7 @@ function renderSetupResult(setup) {
   const el = document.getElementById("setup-result");
   if (!el) return;
   if (!setup) {
+    lastDrawnSetup = null;
     el.classList.add("hidden");
     el.innerHTML = "";
     return;
@@ -600,8 +602,14 @@ function renderSetupResult(setup) {
     <div class="setup-result-grid">${groupsHtml}</div>
     ${notesHtml}
     ${warnHtml}
+    <div class="setup-result-actions">
+      <button type="button" class="btn btn-primary" onclick="useDrawnSetupForGame()">Use this setup for a game →</button>
+    </div>
   `;
+  lastDrawnSetup = setup;
 }
+
+let lastDrawnSetup = null;
 
 function drawSetup() {
   if (!activeGrouped) return;
@@ -1001,6 +1009,7 @@ async function loadScripts() {
   applyGameDayLabels(current.length || 1);
   renderFeatured(current);
   renderScriptGrid(allScripts);
+  document.dispatchEvent(new CustomEvent("scripts-loaded"));
 
   document.getElementById("script-search").addEventListener("input", (e) => {
     filterScripts(e.target.value);

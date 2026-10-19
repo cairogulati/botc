@@ -30,6 +30,16 @@ date: 2026-10-22
 
 Lines starting with `#` are ignored.
 
+## Game night (Game tab)
+
+Everything runs on one phone that gets passed around the table.
+
+1. **Setup:** the Storyteller picks the script and player count, then taps characters to select or deselect them, or uses 🎲 Random setup. The counters show the expected Townsfolk/Outsider/Minion/Demon split, including setup changes such as the Baron's. You can also use a random setup drawn in a script's Grimoire tab with "Use this setup for a game".
+2. **Deal:** each player taps a face-down card, enters their name and sees their character, then hides it and passes the phone on. The Drunk, Lunatic and Marionette are shown the character they think they are.
+3. **Grimoire:** the Storyteller opens it after a confirm. Tap a seat to rename the player, change their character, mark them dead, track their ghost vote and keep notes. It also suggests 3 Demon bluffs.
+
+The game is saved in the phone's browser, so refreshing the page doesn't lose it.
+
 ## Characters
 
 `data/characters.json` maps each character ID to its name and team (`townsfolk`, `outsider`, `minion`, `demon`, `traveler` or `fabled`). The random setup generator only draws characters it can find here, so add any new character a script uses. IDs are matched ignoring case, spaces, hyphens and underscores.
