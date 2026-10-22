@@ -7,10 +7,11 @@ const TEAM_SINGULAR = { townsfolk: "Townsfolk", outsider: "Outsider", minion: "M
 const DEALT_TEAMS = ["townsfolk", "outsider", "minion", "demon", "unknown"];
 
 // Characters who are shown a different character when they look at their card.
+// The Storyteller can pick the character each one is shown, or leave it random.
 const DISGUISES = {
-  drunk: { team: "townsfolk", label: "thinks they are" },
-  lunatic: { team: "demon", label: "thinks they are" },
-  marionette: { team: "townsfolk", label: "thinks they are" },
+  drunk: { teams: ["townsfolk"] },
+  lunatic: { teams: ["demon"] },
+  marionette: { teams: ["townsfolk", "outsider"] },
 };
 
 let game = loadGame();
@@ -27,6 +28,7 @@ function newGame(scriptFile = null, selection = []) {
     fabled: [],
     clock: 0, // 0 = Night 1, 1 = Day 1, 2 = Night 2, …
     nightDone: [],
+    disguises: {}, // role id -> character the Storyteller picked before dealing
     votes: [],
     executions: {},
   };
@@ -229,6 +231,7 @@ function renderSetupSummary() {
     <p class="game-summary-line"><strong>${total} / ${count}</strong> characters selected · <span class="${diff === 0 ? "game-ok" : ""}">${status}</span></p>
     ${notesHtml}`;
   dealBtn.disabled = diff !== 0;
+  renderDisguisePicker();
 }
 
 function toggleCharacter(id) {
@@ -261,6 +264,73 @@ function clearSelection() {
   renderGameSetup();
 }
 
+// Characters from the script a disguised role could be shown, minus those taken.
+function disguiseCandidates(role, taken) {
+  const d = DISGUISES[role];
+  if (!d) return [];
+  return scriptRoleIds(gameScript())
+    .filter((id) => d.teams.includes(getCharacter(id).team) && !taken.has(id))
+    .sort((a, b) => getCharacter(a).name.localeCompare(getCharacter(b).name));
+}
+
+function disguiseOptionsHtml(role, taken, selected, emptyLabel) {
+  return (
+    `<option value="">${emptyLabel}</option>` +
+    // Keep the current pick listed even if it has since come into play.
+    [...(selected && taken.has(selected) ? [selected] : []), ...disguiseCandidates(role, taken)]
+      .map(
+        (id) =>
+          `<option value="${escapeHtml(id)}"${id === selected ? " selected" : ""}>${escapeHtml(getCharacter(id).name)} (${escapeHtml(
+            TEAM_SINGULAR[getCharacter(id).team] || ""
+          )})</option>`
+      )
+      .join("")
+  );
+}
+
+function renderDisguisePicker() {
+  const box = document.getElementById("game-disguises");
+  const roles = game.selection.filter((id) => DISGUISES[id]);
+  box.hidden = !roles.length;
+  if (!roles.length) return;
+
+  // Drop picks that are no longer valid (now in play, or role deselected).
+  Object.keys(game.disguises).forEach((role) => {
+    const pick = game.disguises[role];
+    if (!roles.includes(role) || game.selection.includes(pick)) delete game.disguises[role];
+  });
+
+  box.innerHTML =
+    `<h3>Who do they think they are?</h3>
+    <p class="setup-lead">Pick the character they'll see on their card, or leave it random. Only characters not in play are offered.</p>` +
+    roles
+      .map((role) => {
+        const others = Object.entries(game.disguises)
+          .filter(([r]) => r !== role)
+          .map(([, id]) => id);
+        const taken = new Set([...game.selection, ...others]);
+        return `<label class="grim-field">
+          <span>${escapeHtml(getCharacter(role).name)} sees</span>
+          <select class="search-input game-input" data-disguise="${escapeHtml(role)}">${disguiseOptionsHtml(
+            role,
+            taken,
+            game.disguises[role],
+            "🎲 Random"
+          )}</select>
+        </label>`;
+      })
+      .join("");
+
+  box.querySelectorAll("[data-disguise]").forEach((sel) => {
+    sel.addEventListener("change", () => {
+      if (sel.value) game.disguises[sel.dataset.disguise] = sel.value;
+      else delete game.disguises[sel.dataset.disguise];
+      saveGame();
+      renderDisguisePicker();
+    });
+  });
+}
+
 function pickUnused(ids, used, n) {
   return shuffle(ids.filter((id) => !used.has(id))).slice(0, n);
 }
@@ -276,16 +346,12 @@ function startDealing() {
   const script = gameScript();
   if (!script || game.selection.length !== selectedPlayers) return;
 
-  const inPlay = new Set(game.selection);
-  const ids = scriptRoleIds(script);
-  const used = new Set(inPlay);
+  const used = new Set([...game.selection, ...Object.values(game.disguises)]);
 
   game.players = shuffle(game.selection).map((role) => {
     let shownAs = null;
-    const disguise = DISGUISES[role];
-    if (disguise) {
-      const options = ids.filter((id) => getCharacter(id).team === disguise.team);
-      shownAs = pickUnused(options, used, 1)[0] || null;
+    if (DISGUISES[role]) {
+      shownAs = game.disguises[role] || shuffle(disguiseCandidates(role, used))[0] || null;
       if (shownAs) used.add(shownAs);
     }
     return makePlayer(role, { shownAs });

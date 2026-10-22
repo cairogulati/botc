@@ -30,7 +30,7 @@ const SETUP_MODIFIERS = {
   fanggu: { outsider: 1, note: "Fang Gu: +1 Outsider." },
   vigormortis: { outsider: -1, note: "Vigormortis: −1 Outsider." },
   balloonist: { note: "Balloonist: +1 Outsider — adjust the split by hand." },
-  marionette: { minion: 1, note: "Marionette: +1 Minion (an extra Minion, one fewer Townsfolk)." },
+  marionette: { note: "Marionette: takes a normal Minion slot, sits next to the Demon and thinks they are a good character." },
   lilmonsta: { minion: 1, note: "Lil' Monsta: +1 Minion; the Minions babysit the demon token." },
   lordoftyphon: { minion: 1, note: "Lord of Typhon: +1 Minion; seat the Lord between two Minions." },
   kazali: { noMinions: true, note: "Kazali: no Minions at the start — the Kazali chooses them on the first night." },

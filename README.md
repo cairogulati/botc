@@ -35,7 +35,7 @@ Lines starting with `#` are ignored.
 Everything runs on one phone that gets passed around the table.
 
 1. **Setup:** the Storyteller picks the script and player count, then taps characters to select or deselect them, or uses 🎲 Random setup. The counters show the expected Townsfolk/Outsider/Minion/Demon split, including setup changes such as the Baron's. You can also use a random setup drawn in a script's Grimoire tab with "Use this setup for a game".
-2. **Deal:** each player taps a face-down card, enters their name and sees their character, then hides it and passes the phone on. The Drunk, Lunatic and Marionette are shown the character they think they are.
+2. **Deal:** each player taps a face-down card, enters their name and sees their character, then hides it and passes the phone on. The Drunk, Lunatic and Marionette are shown the character they think they are: the Storyteller picks it in setup ("Who do they think they are?") or leaves it random, and can change it later from that player's seat in the grimoire.
 3. **Grimoire:** the Storyteller opens it after a confirm.
    - **Circle:** reminder tokens for the characters in play sit in a tray above the circle. Tap one ("Poisoned", "Red Herring"…), then tap a player to place it; tap a placed reminder to remove it. Tap a seat to see its ability and jinxes, mark them dead, track their ghost vote, switch alignment, change their character or write notes. "Rearrange seats" swaps players so the circle matches the table, "＋ Traveller" adds a traveller, and "Town square" hides every character so you can show the table.
    - **Clock:** step through Night 1, Day 1, Night 2…

@@ -339,7 +339,6 @@ function renderSeatPanel() {
   }
   panel.hidden = false;
   const c = getCharacter(p.role);
-  const shown = p.shownAs ? getCharacter(p.shownAs).name : null;
   const side = playerSide(p);
 
   panel.innerHTML = `
@@ -348,7 +347,19 @@ function renderSeatPanel() {
       <button type="button" class="modal-close" data-act="close" aria-label="Close">✕</button>
     </div>
     ${c.ability ? `<p class="grim-seat-ability">${escapeHtml(c.ability)}</p>` : ""}
-    ${shown ? `<p class="grim-seat-disguise">Thinks they are the <strong>${escapeHtml(shown)}</strong>.</p>` : ""}
+    ${
+      DISGUISES[p.role]
+        ? `<label class="grim-field grim-seat-disguise-pick">
+            <span>Thinks they are</span>
+            <select id="grim-seat-disguise" class="search-input game-input">${disguiseOptionsHtml(
+              p.role,
+              new Set([...inPlayIds(), ...game.players.filter((x) => x !== p).map((x) => x.shownAs)]),
+              p.shownAs,
+              "— Not chosen —"
+            )}</select>
+          </label>`
+        : ""
+    }
     ${jinxesFor(p.role).length ? `<p class="grim-seat-jinx">⚠️ Jinx: ${jinxesFor(p.role).map((j) => escapeHtml(j)).join(" ")}</p>` : ""}
 
     <div class="btn-row grim-seat-toggles">
@@ -397,6 +408,13 @@ function renderSeatPanel() {
       rerender();
     });
   });
+  const disguiseSel = panel.querySelector("#grim-seat-disguise");
+  if (disguiseSel) {
+    disguiseSel.addEventListener("change", (e) => {
+      p.shownAs = e.target.value || null;
+      rerender();
+    });
+  }
   panel.querySelector("#grim-seat-name").addEventListener("change", (e) => {
     p.name = e.target.value.trim();
     rerender();
