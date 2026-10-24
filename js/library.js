@@ -2,13 +2,14 @@
 // scripts we play that use it. Relies on globals from app.js.
 
 const EDITION_LABELS = {
+  homebrew: "Homebrew",
   tb: "Trouble Brewing",
   bmr: "Bad Moon Rising",
   snv: "Sects & Violets",
   carousel: "Experimental",
 };
 
-const LIBRARY_FILTERS = ["all", "townsfolk", "outsider", "minion", "demon", "traveler", "fabled", "loric"];
+const LIBRARY_FILTERS = ["all", "townsfolk", "outsider", "minion", "demon", "traveler", "fabled", "loric", "homebrew"];
 
 let libraryTeam = "all";
 let libraryOursOnly = false;
@@ -47,7 +48,7 @@ function libraryCardHtml(c) {
     <article class="lib-card lib-card-${c.team}" id="char-${escapeHtml(c.id)}">
       <div class="lib-card-head">
         <h3>${escapeHtml(c.name)}</h3>
-        ${edition ? `<span class="lib-edition">${escapeHtml(edition)}</span>` : ""}
+        ${edition ? `<span class="lib-edition${c.edition === "homebrew" ? " lib-edition-homebrew" : ""}">${escapeHtml(edition)}</span>` : ""}
       </div>
       <p class="lib-ability">${escapeHtml(c.ability || "No ability text yet.")}</p>
       ${scriptsHtml}
@@ -64,7 +65,9 @@ function renderLibrary() {
   const all = Object.keys(characters).map((id) => getCharacter(id));
 
   const matches = all.filter((c) => {
-    if (libraryTeam !== "all" && c.team !== libraryTeam) return false;
+    if (libraryTeam === "homebrew") {
+      if (c.edition !== "homebrew") return false;
+    } else if (libraryTeam !== "all" && c.team !== libraryTeam) return false;
     if (libraryOursOnly && !scriptsUsing(c.id).length) return false;
     if (!q) return true;
     return c.name.toLowerCase().includes(q) || (c.ability || "").toLowerCase().includes(q);
@@ -103,7 +106,7 @@ function initLibrary() {
   const filters = document.getElementById("library-filters");
   filters.innerHTML = LIBRARY_FILTERS.map(
     (team) =>
-      `<button type="button" class="game-chip lib-filter${team === libraryTeam ? " selected" : ""}" data-team="${team}" aria-pressed="${team === libraryTeam}">${team === "all" ? "All" : TEAM_LABELS[team]}</button>`
+      `<button type="button" class="game-chip lib-filter${team === libraryTeam ? " selected" : ""}" data-team="${team}" aria-pressed="${team === libraryTeam}">${team === "all" ? "All" : TEAM_LABELS[team] || "🧪 Homebrew"}</button>`
   ).join("");
 
   filters.querySelectorAll(".lib-filter").forEach((btn) => {

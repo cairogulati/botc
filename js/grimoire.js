@@ -455,7 +455,10 @@ function renderNightOrder() {
     return;
   }
   const first = clock.number === 1;
-  const order = first ? nightSheet.firstNight : nightSheet.otherNight;
+  // A script may ship its own night order (homebrew characters aren't in the official one).
+  const script = gameScript();
+  const own = first ? script?.firstNight : script?.otherNight;
+  const order = own && own.length ? own : first ? nightSheet.firstNight : nightSheet.otherNight;
   const steps = [];
 
   order.forEach((id) => {

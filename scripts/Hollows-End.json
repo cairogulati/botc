@@ -1,0 +1,331 @@
+[
+  {
+    "id": "_meta",
+    "name": "Hollow's End",
+    "author": "MinorDeity",
+    "firstNight": [
+      "dusk",
+      "hw_hexer",
+      "hw_possessed",
+      "hw_lich",
+      "minioninfo",
+      "demoninfo",
+      "hw_candlemaker",
+      "hw_lanternbearer",
+      "dawn"
+    ],
+    "otherNight": [
+      "dusk",
+      "hw_graverobber",
+      "hw_hexer",
+      "hw_saltcircle",
+      "hw_priest",
+      "hw_changeling",
+      "hw_headlesshorseman",
+      "hw_vampirecount",
+      "hw_possessed",
+      "hw_hollowking",
+      "hw_lich",
+      "hw_exhumer",
+      "hw_scarecrow",
+      "hw_lanternbearer",
+      "hw_trickortreater",
+      "hw_crowwhisperer",
+      "hw_gravekeeper",
+      "hw_seancemedium",
+      "hw_nightwatchman",
+      "dawn"
+    ]
+  },
+  {
+    "id": "hw_candlemaker",
+    "name": "Candlemaker",
+    "team": "townsfolk",
+    "ability": "You start knowing how many evil players sit within 2 seats of you.",
+    "firstNightReminder": "Show the number of evil players within 2 seats of the Candlemaker.",
+    "reminders": [],
+    "firstNight": 30,
+    "otherNight": 0
+  },
+  {
+    "id": "hw_lanternbearer",
+    "name": "Lantern Bearer",
+    "team": "townsfolk",
+    "ability": "Each night, choose 2 players: you learn if either is a Minion.",
+    "firstNightReminder": "The Lantern Bearer points to 2 players. Nod if either is a Minion.",
+    "otherNightReminder": "The Lantern Bearer points to 2 players. Nod if either is a Minion.",
+    "reminders": [],
+    "firstNight": 31,
+    "otherNight": 40
+  },
+  {
+    "id": "hw_trickortreater",
+    "name": "Trick-or-Treater",
+    "team": "townsfolk",
+    "ability": "Each night*, knock on a player's door: you learn 'Trick' if they are the Demon, otherwise 'Treat'. If you knocked on the Demon, it may kill you tonight as well.",
+    "otherNightReminder": "The Trick-or-Treater points to a player. Show TRICK if Demon, else TREAT. If Demon, the Demon may also kill them (resolve before dawn).",
+    "reminders": [
+      "Knocked"
+    ],
+    "firstNight": 0,
+    "otherNight": 41
+  },
+  {
+    "id": "hw_gravekeeper",
+    "name": "Gravekeeper",
+    "team": "townsfolk",
+    "ability": "Each night*, choose a player who died today or tonight: you learn their character.",
+    "otherNightReminder": "If anyone died since the last dusk, the Gravekeeper chooses one. Show their character token.",
+    "reminders": [],
+    "firstNight": 0,
+    "otherNight": 45
+  },
+  {
+    "id": "hw_seancemedium",
+    "name": "Séance Medium",
+    "team": "townsfolk",
+    "ability": "Once per game, at night*, choose a dead player: you learn their alignment & the character that killed them (if any).",
+    "otherNightReminder": "If the Medium uses their ability, they point to a dead player. Show alignment, then the killing character (or shake head).",
+    "reminders": [
+      "No ability"
+    ],
+    "firstNight": 0,
+    "otherNight": 46
+  },
+  {
+    "id": "hw_crowwhisperer",
+    "name": "Crow Whisperer",
+    "team": "townsfolk",
+    "ability": "If you die at night, you are woken to choose 2 players: you learn if they are on the same team.",
+    "otherNightReminder": "If the Crow Whisperer died tonight, they point to 2 players. Nod if same team.",
+    "reminders": [],
+    "firstNight": 0,
+    "otherNight": 44
+  },
+  {
+    "id": "hw_nightwatchman",
+    "name": "Night Watchman",
+    "team": "townsfolk",
+    "ability": "Each night*, you learn how many different players were chosen by evil abilities tonight.",
+    "otherNightReminder": "Show the number of different players chosen by evil abilities tonight.",
+    "reminders": [],
+    "firstNight": 0,
+    "otherNight": 47
+  },
+  {
+    "id": "hw_bellringer",
+    "name": "Bell Ringer",
+    "team": "townsfolk",
+    "ability": "The first time a good player dies at night, all players learn how many Minions are alive.",
+    "reminders": [
+      "Bell tolled"
+    ],
+    "firstNight": 0,
+    "otherNight": 0
+  },
+  {
+    "id": "hw_priest",
+    "name": "Priest",
+    "team": "townsfolk",
+    "ability": "Each night*, choose a player (not yourself): they are safe from the Demon tonight.",
+    "otherNightReminder": "The Priest points to a player (not themselves). Mark them Blessed.",
+    "reminders": [
+      "Blessed"
+    ],
+    "firstNight": 0,
+    "otherNight": 12
+  },
+  {
+    "id": "hw_saltcircle",
+    "name": "Salt Circle",
+    "team": "townsfolk",
+    "ability": "Once per game, at night*, draw the circle: you & your living neighbours cannot die tonight.",
+    "otherNightReminder": "If the Salt Circle uses their ability, mark them and their living neighbours Protected.",
+    "reminders": [
+      "Protected",
+      "Protected",
+      "Protected",
+      "No ability"
+    ],
+    "firstNight": 0,
+    "otherNight": 11
+  },
+  {
+    "id": "hw_silversmith",
+    "name": "Silversmith",
+    "team": "townsfolk",
+    "ability": "Once per game, during the day, publicly choose a player: if they are the Demon, they die.",
+    "reminders": [
+      "No ability"
+    ],
+    "firstNight": 0,
+    "otherNight": 0
+  },
+  {
+    "id": "hw_exhumer",
+    "name": "Exhumer",
+    "team": "townsfolk",
+    "ability": "Once per game, at night*, choose a dead player: if they are good, they are resurrected with their ability. If evil, you die.",
+    "otherNightReminder": "If the Exhumer uses their ability, they point to a dead player. Good: resurrect. Evil: the Exhumer dies.",
+    "reminders": [
+      "Risen",
+      "No ability"
+    ],
+    "firstNight": 0,
+    "otherNight": 25
+  },
+  {
+    "id": "hw_scarecrow",
+    "name": "Scarecrow",
+    "team": "townsfolk",
+    "ability": "The first time you would die at night, you don't, and you learn which character chose you.",
+    "otherNightReminder": "If the Scarecrow was saved tonight, show them the character that chose them.",
+    "reminders": [
+      "No ability"
+    ],
+    "firstNight": 0,
+    "otherNight": 30
+  },
+  {
+    "id": "hw_blackcat",
+    "name": "Black Cat",
+    "team": "outsider",
+    "ability": "Your living neighbours are unlucky: they might register as evil.",
+    "reminders": [],
+    "firstNight": 0,
+    "otherNight": 0
+  },
+  {
+    "id": "hw_restlessspirit",
+    "name": "Restless Spirit",
+    "team": "outsider",
+    "ability": "If you are executed, the Demon kills an extra player tonight.",
+    "reminders": [
+      "Restless"
+    ],
+    "firstNight": 0,
+    "otherNight": 0
+  },
+  {
+    "id": "hw_possessed",
+    "name": "Possessed",
+    "team": "outsider",
+    "ability": "The Demon knows who you are. Once per game, at night, the Demon may make you evil (you learn this).",
+    "firstNightReminder": "Show the Demon the Possessed player.",
+    "otherNightReminder": "If the Demon chooses to turn the Possessed, wake the Possessed and show them the YOU ARE EVIL token.",
+    "reminders": [
+      "Turned"
+    ],
+    "firstNight": 15,
+    "otherNight": 22
+  },
+  {
+    "id": "hw_poisonedapple",
+    "name": "Poisoned Apple",
+    "team": "outsider",
+    "ability": "If you die at night, both your living neighbours are poisoned until dusk tomorrow.",
+    "reminders": [
+      "Poisoned",
+      "Poisoned"
+    ],
+    "firstNight": 0,
+    "otherNight": 0
+  },
+  {
+    "id": "hw_hexer",
+    "name": "Hexer",
+    "team": "minion",
+    "ability": "Each night, choose a player: they are poisoned tonight & tomorrow day.",
+    "firstNightReminder": "The Hexer points to a player. Mark them Hexed.",
+    "otherNightReminder": "The Hexer points to a player. Mark them Hexed.",
+    "reminders": [
+      "Hexed"
+    ],
+    "firstNight": 10,
+    "otherNight": 10
+  },
+  {
+    "id": "hw_changeling",
+    "name": "Changeling",
+    "team": "minion",
+    "ability": "You might register as good & as a Townsfolk. Each night*, choose a player: if they are a Townsfolk, you learn their character.",
+    "otherNightReminder": "The Changeling points to a player. If Townsfolk, show their character; otherwise shake head.",
+    "reminders": [],
+    "firstNight": 0,
+    "otherNight": 16
+  },
+  {
+    "id": "hw_graverobber",
+    "name": "Grave Robber",
+    "team": "minion",
+    "ability": "Each night*, choose a dead player: you have their ability until dusk tomorrow.",
+    "otherNightReminder": "The Grave Robber points to a dead player. They gain that ability until dusk tomorrow (wake them at that character's time if needed).",
+    "reminders": [
+      "Robbed"
+    ],
+    "firstNight": 0,
+    "otherNight": 9
+  },
+  {
+    "id": "hw_maskedstranger",
+    "name": "Masked Stranger",
+    "team": "minion",
+    "ability": "Once per game, during the day, publicly choose a player: they die. Then you die.",
+    "reminders": [],
+    "firstNight": 0,
+    "otherNight": 0
+  },
+  {
+    "id": "hw_headlesshorseman",
+    "name": "Headless Horseman",
+    "team": "demon",
+    "ability": "Each night*, choose a player: they die. On the night after an execution, choose 2 players instead.",
+    "otherNightReminder": "The Horseman points to a player (2 if there was an execution today). They die.",
+    "reminders": [
+      "Dead",
+      "Dead"
+    ],
+    "firstNight": 0,
+    "otherNight": 20
+  },
+  {
+    "id": "hw_vampirecount",
+    "name": "Vampire Count",
+    "team": "demon",
+    "ability": "Each night*, choose a player: they die. Once per game, if you choose a Townsfolk, they become an evil Thrall instead (a Minion with no ability).",
+    "otherNightReminder": "The Count points to a player. They die, or (once) if Townsfolk, wake them and show YOU ARE EVIL; they lose their ability.",
+    "reminders": [
+      "Dead",
+      "Thrall"
+    ],
+    "firstNight": 0,
+    "otherNight": 21
+  },
+  {
+    "id": "hw_hollowking",
+    "name": "Hollow King",
+    "team": "demon",
+    "ability": "Each night*, choose a player: they die at dusk tomorrow unless they nominate or are nominated that day.",
+    "otherNightReminder": "The Hollow King points to a player. Mark them Carved. At dusk tomorrow they die unless they nominated or were nominated.",
+    "reminders": [
+      "Carved"
+    ],
+    "firstNight": 0,
+    "otherNight": 23
+  },
+  {
+    "id": "hw_lich",
+    "name": "Lich",
+    "team": "demon",
+    "ability": "On your 1st night, choose a Minion: your phylactery. Each night*, choose a player: they die. If you die while your phylactery lives, it dies instead & you live.",
+    "firstNightReminder": "The Lich points to a Minion. Mark them Phylactery.",
+    "otherNightReminder": "The Lich points to a player. They die.",
+    "reminders": [
+      "Phylactery",
+      "Dead"
+    ],
+    "firstNight": 16,
+    "otherNight": 24
+  },
+  "bootlegger"
+]

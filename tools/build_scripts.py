@@ -20,6 +20,13 @@ SCRIPTS_DIR = ROOT / "scripts"
 DATA_DIR = ROOT / "data"
 THUMBS_DIR = DATA_DIR / "thumbs"
 CURRENT_FILE = ROOT / "current-script.txt"
+CHARACTERS_FILE = DATA_DIR / "characters.json"
+
+# Fields copied from a homebrew character defined inside a script JSON.
+HOMEBREW_FIELDS = [
+    "name", "team", "ability", "flavor",
+    "firstNightReminder", "otherNightReminder", "reminders", "remindersGlobal", "setup",
+]
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 THUMB_WIDTH = 480
@@ -79,6 +86,41 @@ def meta_from(data):
     return {}
 
 
+def homebrew_from(data):
+    """Characters defined in full inside a script (anything but _meta with a name and team)."""
+    found = {}
+    for item in data or []:
+        if not isinstance(item, dict) or item.get("id") in (None, "_meta"):
+            continue
+        if item.get("name") and item.get("team"):
+            entry = {k: item[k] for k in HOMEBREW_FIELDS if item.get(k)}
+            entry["team"] = {"traveller": "traveler"}.get(entry["team"], entry["team"])
+            entry["edition"] = "homebrew"
+            found[norm_id(item["id"])] = entry
+    return found
+
+
+def night_order(meta, key):
+    return [norm_id(x) for x in meta.get(key) or [] if isinstance(x, str)]
+
+
+def write_characters(homebrew):
+    """Add homebrew characters to data/characters.json without touching official ones."""
+    chars = json.loads(CHARACTERS_FILE.read_text(encoding="utf-8")) if CHARACTERS_FILE.exists() else {}
+    changed = False
+    for cid, entry in homebrew.items():
+        existing = chars.get(cid)
+        if existing and existing.get("edition") != "homebrew":
+            continue  # official character with the same ID wins
+        if existing != entry:
+            chars[cid] = entry
+            changed = True
+    if changed:
+        lines = [f"  {json.dumps(cid)}: {json.dumps(e, ensure_ascii=False)}" for cid, e in chars.items()]
+        CHARACTERS_FILE.write_text("{\n" + ",\n".join(lines) + "\n}\n", encoding="utf-8")
+    print(f"homebrew characters: {len(homebrew)} found, characters.json {'updated' if changed else 'unchanged'}")
+
+
 def make_thumb(source, dest):
     if source.suffix.lower() == ".pdf":
         if not shutil.which("pdftoppm"):
@@ -114,6 +156,7 @@ def main():
     THUMBS_DIR.mkdir(parents=True, exist_ok=True)
     wanted_thumbs = set()
     entries = []
+    homebrew = {}
 
     for stem, files in groups.items():
         by_ext = {}
@@ -149,6 +192,11 @@ def main():
         if meta.get("author"):
             entry["author"] = meta["author"]
         entry["roles"] = roles_from(data)
+        for key in ("firstNight", "otherNight"):
+            order = night_order(meta, key)
+            if order:
+                entry[key] = order
+        homebrew.update(homebrew_from(data))
         entry["current"] = stem in current_keys
         entries.append(entry)
 
@@ -160,6 +208,7 @@ def main():
     out = DATA_DIR / "scripts.json"
     out.write_text(json.dumps(entries, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {out.relative_to(ROOT)} with {len(entries)} scripts")
+    write_characters(homebrew)
 
 
 if __name__ == "__main__":

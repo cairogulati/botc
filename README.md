@@ -10,6 +10,8 @@ A small companion site for our Blood on the Clocktower group: rules for new play
 
 If a PDF and an image share a name, the PDF is the sheet and the image is used as its preview.
 
+**Homebrew characters:** if a script JSON defines characters in full (objects with `id`, `name`, `team`, `ability`…, as the official script tool exports them), the workflow adds them to `data/characters.json` as Homebrew characters. They show in the Library (🧪 Homebrew filter), the random setup and the grimoire. If the script's `_meta` has `firstNight` / `otherNight` lists, the grimoire uses that night order for the script.
+
 ## Setting tonight's script
 
 Put one script filename per line in `current-script.txt`:
