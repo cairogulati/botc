@@ -47,6 +47,16 @@ Everything runs on one phone that gets passed around the table.
 
 The game is saved in the phone's browser, so refreshing the page doesn't lose it.
 
+### 🎵 Musical Chairs variant
+
+Turn on **Musical Chairs variant** in setup. Good characters live on the chairs, and evil characters stay with their player.
+
+- **Setup:** pick one good character per player (one per chair), plus the evil team on top. With 7 players that's 7 good characters and 2 evil. 🎲 Random setup adds the extra Townsfolk for you. Characters that don't fit the variant (Snake Charmer, Pit-Hag, Lunatic, Marionette, Legion…) get a warning.
+- **Deal:** card numbers are chair numbers. Good players see their chair's character. Evil players see their own character, plus the chair they're sitting on: that chair's character does nothing while they sit there, so they can claim it.
+- **Music round:** at each dusk, tap 🎵 Music round in the grimoire. Record who sat in each chair, or let the site pick new seats so you can read them out. Dead players don't move. Good players become their new chair's character, and anyone who moved is marked 🎵 on the cards screen so they can check their new chair.
+- **Night:** a player new to a "You start knowing…" character's chair (Washerwoman, Chef…) gets a step in that night's wake order to receive the info.
+- **Grimoire:** each seat shows its chair number. The seat panel shows the chair's character and has a toggle for whether the chair's once-per-game ability is used, plus chair notes. Info → Seating log shows who sat where after every round.
+
 ## Characters
 
 `data/characters.json` holds every character's name, team, ability, flavour text, Storyteller reminders and reminder tokens. `data/nightsheet.json` is the official night order and `data/jinxes.json` the official jinxes. They feed the Library tab, the script viewer, the random setup and the game. To refresh it from the official data (for example after new characters are released), run:

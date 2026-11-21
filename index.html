@@ -260,6 +260,16 @@
     </div>
 
     <div class="card">
+      <label class="game-toggle">
+        <input type="checkbox" id="game-musical" onchange="toggleMusical(this.checked)">
+        <span>
+          <strong>🎵 Musical Chairs variant</strong>
+          <span class="setup-lead">Good characters live on the chairs and evil characters stay with their player. At each dusk the living players change seats, and good players become their new chair's character. Pick one good character per player, plus the evil team.</span>
+        </span>
+      </label>
+    </div>
+
+    <div class="card">
       <h3>Characters in play</h3>
       <p class="setup-lead">Tap to select or deselect.</p>
       <div id="game-chips" class="game-chips"></div>
@@ -274,7 +284,7 @@
   </section>
 
   <section id="game-deal" hidden>
-    <p class="page-lead">Pass the phone round. Each player taps a card, enters their name and checks their character in secret.</p>
+    <p class="page-lead" id="deal-lead">Pass the phone round. Each player taps a card, enters their name and checks their character in secret.</p>
     <p class="game-label" id="deal-progress"></p>
     <div id="deal-grid" class="deal-grid"></div>
     <div class="btn-row game-footer-actions">
@@ -309,6 +319,7 @@
         <button type="button" class="game-chip" id="grim-swap-btn" onclick="toggleSwapMode()">↔ Rearrange seats</button>
         <button type="button" class="game-chip" onclick="addTraveller()">＋ Traveller</button>
         <button type="button" class="game-chip" onclick="showTownSquare()">👁 Town square</button>
+        <button type="button" class="game-chip" id="grim-music-btn" onclick="openMusicRound()" hidden>🎵 Music round</button>
       </div>
       <div id="grim-tray" class="grim-tray" aria-label="Reminder tokens"></div>
       <p id="grim-tray-hint" class="grim-tray-hint"></p>
@@ -318,6 +329,7 @@
       </div>
       <div id="grim-center" class="grim-stats"></div>
       <div id="grim-seat" class="card grim-seat" hidden></div>
+      <div id="grim-music" class="card grim-music" hidden></div>
     </div>
 
     <div id="grim-pane-night" hidden>
@@ -341,6 +353,10 @@
       <div class="card">
         <h3>Jinxes</h3>
         <ul id="grim-jinxes" class="grim-jinxes"></ul>
+      </div>
+      <div class="card" id="grim-seating-card" hidden>
+        <h3>🎵 Seating log</h3>
+        <div id="grim-seating"></div>
       </div>
     </div>
 
@@ -467,6 +483,7 @@
         <p id="deal-reveal-role" class="deal-reveal-role"></p>
         <span id="deal-reveal-team" class="badge"></span>
         <p id="deal-reveal-ability" class="deal-reveal-ability"></p>
+        <p id="deal-reveal-chair" class="deal-reveal-chair" hidden></p>
       </div>
       <button type="button" class="btn btn-primary" onclick="closeDealCard()">Hide &amp; pass the phone on</button>
     </div>
