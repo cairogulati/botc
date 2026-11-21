@@ -28,6 +28,7 @@ let swapFirst = null;
 let armedReminder = null; // reminder picked from the tray, waiting for a player tap
 let townSquare = false;
 let voteDraft = null;
+let musicDraft = null; // musical: { seats: { chairIndex: playerId } } while recording a music round
 let nightSheet = { firstNight: [], otherNight: [] };
 let jinxData = {};
 let grimDataPromise = null;
@@ -145,6 +146,10 @@ function renderCircle() {
 
   document.getElementById("grim-swap-btn").classList.toggle("active", swapMode);
   document.getElementById("grim-swap-hint").hidden = !swapMode;
+  document.getElementById("grim-swap-hint").textContent = game.musical
+    ? "Tap two players to swap their chairs. Good players take on their new chair's character. Tap “Rearrange seats” again when done."
+    : "Tap two players to swap their seats. Tap “Rearrange seats” again when done.";
+  document.getElementById("grim-music-btn").hidden = !game.musical;
 
   circle.innerHTML = game.players
     .map((p, i) => {
@@ -176,9 +181,16 @@ function renderCircle() {
               return `<button type="button" class="grim-rem-token grim-rem-${team}" style="${style}" data-pid="${p.id}" data-rem="${k}" title="${escapeHtml(from)}: ${escapeHtml(r.text)} (tap to remove)">${escapeHtml(r.text)}</button>`;
             })
             .join("");
+      const chair = game.musical ? game.chairs[i] : null;
+      const chairTag = chair ? `<span class="grim-token-chair">${i + 1}</span>` : "";
+      const sittingOn =
+        chair && p.carried && !townSquare
+          ? `<span class="grim-token-on">on ${escapeHtml(getCharacter(chair.role).name)}</span>`
+          : "";
       return `
         <button type="button" class="${classes}" data-id="${p.id}" style="${pos(41)}">
-          ${townSquare ? (p.dead ? "💀" : "") : `<span class="grim-token-role">${escapeHtml(c.name)}</span>`}
+          ${chairTag}
+          ${townSquare ? (p.dead ? "💀" : "") : `<span class="grim-token-role">${escapeHtml(c.name)}</span>${sittingOn}`}
           ${ghost}
           <span class="grim-token-name">${escapeHtml(playerLabel(p))}</span>
         </button>${reminders}`;
@@ -207,6 +219,7 @@ function renderCircle() {
 
   renderReminderTray();
   renderSeatPanel();
+  renderMusicPanel();
 }
 
 function onTokenClick(id) {
@@ -227,6 +240,15 @@ function onTokenClick(id) {
       const b = game.players.findIndex((p) => p.id === id);
       if (a >= 0 && b >= 0 && a !== b) {
         [game.players[a], game.players[b]] = [game.players[b], game.players[a]];
+        if (game.musical) {
+          [game.players[a], game.players[b]].forEach((p) => {
+            if (!p.carried && game.chairs[a] && game.chairs[b]) {
+              p.movedAt = game.clock;
+              p.peeked = false;
+            }
+          });
+          applyChairs();
+        }
         saveGame();
       }
       swapFirst = null;
@@ -340,6 +362,27 @@ function renderSeatPanel() {
   panel.hidden = false;
   const c = getCharacter(p.role);
   const side = playerSide(p);
+  const seat = game.players.indexOf(p);
+  const chair = game.musical ? game.chairs[seat] : null;
+  const chairHtml = chair
+    ? `<div class="grim-seat-chair">
+        <p><strong>🎵 Chair ${seat + 1}: ${escapeHtml(getCharacter(chair.role).name)}</strong>${
+          p.carried ? " · dormant while this evil player sits here" : ""
+        }${chair.shownAs ? ` · shows as ${escapeHtml(getCharacter(chair.shownAs).name)}` : ""}</p>
+        <div class="btn-row">
+          <button type="button" class="btn ${chair.used ? "btn-primary" : "btn-ghost"}" data-act="chairused">${
+            chair.used ? "Chair ability used" : "Chair ability unused"
+          }</button>
+          <button type="button" class="btn btn-ghost" data-act="carried">${
+            p.carried ? "Character travels with player" : "Character stays on chair"
+          }</button>
+        </div>
+        <label class="grim-field">
+          <span>Chair notes</span>
+          <input type="text" id="grim-chair-note" class="search-input game-input" value="${escapeHtml(chair.note || "")}" placeholder="Slayer shot day 2…" autocomplete="off">
+        </label>
+      </div>`
+    : "";
 
   panel.innerHTML = `
     <div class="grim-seat-head">
@@ -360,6 +403,7 @@ function renderSeatPanel() {
           </label>`
         : ""
     }
+    ${chairHtml}
     ${jinxesFor(p.role).length ? `<p class="grim-seat-jinx">⚠️ Jinx: ${jinxesFor(p.role).map((j) => escapeHtml(j)).join(" ")}</p>` : ""}
 
     <div class="btn-row grim-seat-toggles">
@@ -395,6 +439,12 @@ function renderSeatPanel() {
         if (!p.dead) p.ghostUsed = false;
       }
       if (act === "ghost") p.ghostUsed = !p.ghostUsed;
+      if (act === "chairused") chair.used = !chair.used;
+      if (act === "carried") {
+        p.carried = !p.carried;
+        // A good character picked up from the chair becomes the player's own.
+        applyChairs();
+      }
       if (act === "align") {
         const natural = teamSide(getCharacter(p.role).team);
         p.alignment = playerSide(p) === "good" ? "evil" : "good";
@@ -402,6 +452,7 @@ function renderSeatPanel() {
       }
       if (act === "remove") {
         if (!confirm(`Remove ${playerLabel(p)} from the game?`)) return;
+        if (chair) game.chairs.splice(seat, 1);
         game.players = game.players.filter((x) => x !== p);
         grimSelected = null;
       }
@@ -412,6 +463,7 @@ function renderSeatPanel() {
   if (disguiseSel) {
     disguiseSel.addEventListener("change", (e) => {
       p.shownAs = e.target.value || null;
+      if (chair && !p.carried) chair.shownAs = p.shownAs;
       rerender();
     });
   }
@@ -423,8 +475,20 @@ function renderSeatPanel() {
     p.role = e.target.value;
     if (!DISGUISES[p.role]) p.shownAs = null;
     p.alignment = null;
+    // Musical: changing a good player's character changes their chair's character.
+    if (chair && !p.carried) {
+      chair.role = p.role;
+      chair.shownAs = p.shownAs;
+    }
     rerender();
   });
+  const chairNote = panel.querySelector("#grim-chair-note");
+  if (chairNote) {
+    chairNote.addEventListener("input", (e) => {
+      chair.note = e.target.value;
+      saveGame();
+    });
+  }
   panel.querySelector("#grim-seat-note").addEventListener("input", (e) => {
     p.note = e.target.value;
     saveGame();
@@ -443,6 +507,163 @@ function addTraveller() {
   saveGame();
   renderCircle();
   document.getElementById("grim-seat").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ---------- Musical Chairs: music round ----------
+
+// Chairs that take part in a music round: living players on a chair (not travellers).
+function musicChairs() {
+  return game.chairs
+    .map((_, i) => i)
+    .filter((i) => {
+      const p = game.players[i];
+      return p && !p.dead && getCharacter(p.role).team !== "traveler";
+    });
+}
+
+function openMusicRound() {
+  armedReminder = null;
+  swapMode = false;
+  grimSelected = null;
+  const seats = {};
+  musicChairs().forEach((i) => (seats[i] = game.players[i].id));
+  musicDraft = { seats };
+  renderCircle();
+  document.getElementById("grim-music").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function shuffleMusicDraft() {
+  const chairs = musicChairs();
+  const people = chairs.map((i) => game.players[i].id);
+  let order = people;
+  // Nobody may land back in the chair they left (when that's possible).
+  for (let tries = 0; tries < 200; tries++) {
+    order = shuffle(people);
+    if (people.length < 2 || order.every((id, k) => id !== people[k])) break;
+  }
+  chairs.forEach((i, k) => (musicDraft.seats[i] = order[k]));
+  renderMusicPanel();
+}
+
+function applyMusicRound() {
+  const chairs = musicChairs();
+  const picked = chairs.map((i) => musicDraft.seats[i]);
+  if (picked.some((id) => !id) || new Set(picked).size !== picked.length) return;
+  const next = game.players.slice();
+  chairs.forEach((i) => {
+    const p = playerById(musicDraft.seats[i]);
+    if (game.players[i] !== p) {
+      p.movedAt = game.clock;
+      p.peeked = false; // evil players check too: they learn their new chair's bluff
+    }
+    next[i] = p;
+  });
+  game.players = next;
+  applyChairs();
+  game.rounds.push({
+    clock: game.clock,
+    label: clockInfo().label,
+    seats: game.chairs.map((chair, i) => {
+      const p = game.players[i];
+      return { chair: i + 1, name: playerLabel(p), role: p.role, carried: p.carried, dead: p.dead };
+    }),
+  });
+  musicDraft = null;
+  saveGame();
+  const moved = game.players.filter((p) => !p.peeked).length;
+  alert(`Seating saved. ${moved} player${moved === 1 ? "" : "s"} changed chairs. Pass the phone round so everyone marked 🎵 can check their new chair.`);
+  closeGrimoire();
+}
+
+function renderMusicPanel() {
+  const panel = document.getElementById("grim-music");
+  if (!musicDraft || townSquare || !game.musical) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  const chairs = musicChairs();
+  const movers = chairs.map((i) => game.players[i]);
+  const picked = chairs.map((i) => musicDraft.seats[i]);
+  const dupes = new Set(picked.filter((id, k) => id && picked.indexOf(id) !== k));
+  const ready = picked.every(Boolean) && !dupes.size;
+  const clock = clockInfo();
+
+  const rows = chairs
+    .map((i) => {
+      const id = musicDraft.seats[i];
+      const stayed = id && id === game.players[i].id;
+      const opts =
+        `<option value="">— Who sat here? —</option>` +
+        movers
+          .map((p) => `<option value="${p.id}"${p.id === id ? " selected" : ""}>${escapeHtml(playerLabel(p))}</option>`)
+          .join("");
+      return `<label class="grim-field music-row${dupes.has(id) ? " clash" : ""}">
+        <span>Chair ${i + 1} · ${escapeHtml(getCharacter(game.chairs[i].role).name)}${stayed ? " · same player" : ""}</span>
+        <select class="search-input game-input" data-music-chair="${i}">${opts}</select>
+      </label>`;
+    })
+    .join("");
+
+  panel.innerHTML = `
+    <div class="grim-seat-head">
+      <h3>🎵 Music round</h3>
+      <button type="button" class="modal-close" data-music="cancel" aria-label="Close">✕</button>
+    </div>
+    <p class="setup-lead">Play the music, then record who sat where once it stops. Dead players stay put. You can also let the site pick new seats and read them out.${
+      clock.night ? " ⚠️ It's night: music rounds normally happen at dusk." : ""
+    }</p>
+    <div class="btn-row">
+      <button type="button" class="btn btn-ghost" data-music="shuffle">🎲 Pick new seats for me</button>
+    </div>
+    ${rows}
+    ${dupes.size ? '<p class="grim-seat-jinx">Someone is in two chairs. Fix the highlighted rows.</p>' : ""}
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" data-music="apply"${ready ? "" : " disabled"}>Save seating</button>
+      <button type="button" class="btn btn-ghost" data-music="cancel">Cancel</button>
+    </div>`;
+
+  panel.querySelectorAll("[data-music-chair]").forEach((sel) => {
+    sel.addEventListener("change", () => {
+      musicDraft.seats[sel.dataset.musicChair] = sel.value;
+      renderMusicPanel();
+    });
+  });
+  panel.querySelectorAll("[data-music]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const act = btn.dataset.music;
+      if (act === "cancel") {
+        musicDraft = null;
+        renderMusicPanel();
+      }
+      if (act === "shuffle") shuffleMusicDraft();
+      if (act === "apply") applyMusicRound();
+    });
+  });
+}
+
+// Musical: players who moved at the last dusk and whose new character only acts
+// on the first night ("You start knowing…") get that info tonight.
+function newToChairSteps() {
+  if (!game.musical) return [];
+  const order = nightSheet.firstNight || [];
+  return game.players
+    .filter((p) => !p.carried && !p.dead && p.movedAt === game.clock - 1)
+    .map((p) => {
+      const id = p.shownAs || p.role;
+      const c = getCharacter(id);
+      if (!c.firstNightReminder || c.otherNightReminder) return null;
+      return {
+        id: `new-${p.id}`,
+        roleId: id,
+        rank: order.indexOf(id),
+        name: `${c.name} · new to chair ${game.players.indexOf(p) + 1}`,
+        text: `🎵 New to this chair: give their first-night info. ${cleanReminder(c.firstNightReminder)}`,
+        actors: [p],
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.rank - b.rank);
 }
 
 // ---------- Night order ----------
@@ -478,6 +699,11 @@ function renderNightOrder() {
     if (!text) return;
     steps.push({ id, name: c.name, text: cleanReminder(text), actors });
   });
+  if (!first) {
+    const fresh = newToChairSteps();
+    const at = steps.length && steps[0].id === "dusk" ? 1 : 0;
+    steps.splice(at, 0, ...fresh);
+  }
 
   pane.innerHTML = steps.length
     ? steps
@@ -485,7 +711,7 @@ function renderNightOrder() {
           const done = game.nightDone.includes(s.id);
           const actors = s.actors
             .map((p) => {
-              const fake = p.shownAs === s.id ? ` (actually the ${escapeHtml(getCharacter(p.role).name)})` : "";
+              const fake = p.shownAs && p.shownAs === (s.roleId || s.id) ? ` (actually the ${escapeHtml(getCharacter(p.role).name)})` : "";
               return `<span class="night-actor${p.dead ? " dead" : ""}">${escapeHtml(playerLabel(p))}${p.dead ? " 💀" : ""}${fake}</span>`;
             })
             .join("");
@@ -724,6 +950,36 @@ function renderInfo() {
         )
         .join("")
     : '<li class="grim-muted">No jinxes on this script.</li>';
+  renderSeatingLog();
+}
+
+function renderSeatingLog() {
+  const card = document.getElementById("grim-seating-card");
+  card.hidden = !game.musical;
+  if (!game.musical) return;
+  const now = {
+    label: "Now",
+    seats: game.chairs.map((chair, i) => {
+      const p = game.players[i];
+      return { chair: i + 1, name: playerLabel(p), role: p.role, carried: p.carried, dead: p.dead };
+    }),
+  };
+  const list = [now, ...game.rounds.slice().reverse().map((r) => ({ ...r, label: `After music round · ${r.label}` }))];
+  document.getElementById("grim-seating").innerHTML = list
+    .map(
+      (r) => `<details class="seating-round"${r === now ? " open" : ""}>
+        <summary>${escapeHtml(r.label)}</summary>
+        <ol class="seating-list">${r.seats
+          .map(
+            (s) =>
+              `<li><span class="seating-chair">${s.chair}</span> ${escapeHtml(s.name)}${s.dead ? " 💀" : ""} · ${escapeHtml(
+                getCharacter(s.role).name
+              )}${s.carried ? " (evil, on chair)" : ""}</li>`
+          )
+          .join("")}</ol>
+      </details>`
+    )
+    .join("");
 }
 
 function rerollBluffs() {

@@ -18,11 +18,22 @@ let game = loadGame();
 let grimoireOpen = false;
 let dealCard = null;
 
-function newGame(scriptFile = null, selection = []) {
+// Musical Chairs variant: good characters live on the chairs, evil characters
+// travel with their player. Characters that don't fit the chair logic.
+const MUSICAL_AVOID = [
+  "snakecharmer", "pithag", "barber", "philosopher", "cultleader", "amnesiac",
+  "lunatic", "marionette", "legion", "riot", "fanggu",
+];
+
+function newGame(scriptFile = null, selection = [], musical = false) {
   return {
     phase: "setup",
     script: scriptFile,
     selection,
+    musical, // Musical Chairs variant on/off
+    chairs: [], // musical: chair i holds { role, shownAs, used, note }
+    rounds: [], // musical: seating log, one entry per music round
+
     players: [],
     bluffs: [],
     fabled: [],
@@ -44,6 +55,9 @@ function makePlayer(role, extra = {}) {
     dead: false,
     ghostUsed: false,
     alignment: null, // null = the character's team decides
+    carried: false, // musical: the character travels with the player (evil team)
+    movedAt: null, // musical: clock value of the music round that moved them
+    peeked: true, // musical: has seen the character on their current chair
     reminders: [],
     note: "",
     ...extra,
@@ -92,6 +106,22 @@ function playerSide(p) {
   return p.alignment || teamSide(getCharacter(p.role).team);
 }
 
+function isGoodTeam(team) {
+  return team === "townsfolk" || team === "outsider" || team === "unknown";
+}
+
+// Musical: make every good player the character on the chair they sit on.
+// Seat index = chair index; travellers sit past the last chair.
+function applyChairs() {
+  if (!game.musical) return;
+  game.players.forEach((p, i) => {
+    const chair = game.chairs[i];
+    if (!chair || p.carried || getCharacter(p.role).team === "traveler") return;
+    p.role = chair.role;
+    p.shownAs = chair.shownAs;
+  });
+}
+
 function gameScript() {
   const playable = allScripts.filter((s) => s.roles && s.roles.length);
   return (
@@ -137,6 +167,8 @@ function expectedSplit(count, ids) {
     }
   });
   Object.keys(t).forEach((k) => (t[k] = Math.max(0, t[k])));
+  // Musical: every chair needs a good character, including the chairs evil sits on.
+  if (game.musical) t.townsfolk += t.minion + t.demon;
   return { target: t, notes };
 }
 
@@ -194,6 +226,14 @@ function renderGameSetup() {
     btn.addEventListener("click", () => toggleCharacter(btn.dataset.id));
   });
 
+  const toggle = document.getElementById("game-musical");
+  if (toggle) toggle.checked = !!game.musical;
+  renderSetupSummary();
+}
+
+function toggleMusical(on) {
+  game.musical = on;
+  saveGame();
   renderSetupSummary();
 }
 
@@ -216,21 +256,37 @@ function renderSetupSummary() {
   });
 
   const total = game.selection.length;
-  const diff = count - total;
+  const evil = have.minion + have.demon;
+  // Musical: one good character per chair, plus the evil characters on top.
+  const good = total - evil;
+  const want = game.musical ? count + evil : count;
+  const diff = want - total;
   let status;
-  if (diff > 0) status = `Pick ${diff} more`;
+  if (game.musical && diff > 0) status = `Pick ${diff} more good`;
+  else if (game.musical && diff < 0) status = `Remove ${-diff} good`;
+  else if (diff > 0) status = `Pick ${diff} more`;
   else if (diff < 0) status = `Remove ${-diff}`;
   else status = "Ready to deal";
   if (split && split.target.demon > 0 && have.demon === 0) status += " · ⚠️ no Demon selected";
+  const ready = diff === 0 && (!game.musical || (evil > 0 && evil < count));
 
-  const notesHtml = split?.notes.length
-    ? `<ul class="game-notes">${split.notes.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul>`
+  const notes = [...(split?.notes || [])];
+  if (game.musical) {
+    const avoid = game.selection.filter((id) => MUSICAL_AVOID.includes(id));
+    if (avoid.length)
+      notes.push(`Not recommended in Musical Chairs: ${avoid.map((id) => getCharacter(id).name).join(", ")}.`);
+  }
+  const notesHtml = notes.length
+    ? `<ul class="game-notes">${notes.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul>`
     : "";
 
+  const line = game.musical
+    ? `<strong>${good} / ${count}</strong> chair characters · <strong>${evil}</strong> evil`
+    : `<strong>${total} / ${count}</strong> characters selected`;
   summary.innerHTML = `
-    <p class="game-summary-line"><strong>${total} / ${count}</strong> characters selected · <span class="${diff === 0 ? "game-ok" : ""}">${status}</span></p>
+    <p class="game-summary-line">${line} · <span class="${ready ? "game-ok" : ""}">${status}</span></p>
     ${notesHtml}`;
-  dealBtn.disabled = diff !== 0;
+  dealBtn.disabled = !ready;
   renderDisguisePicker();
 }
 
@@ -254,6 +310,16 @@ function randomFillSelection() {
   game.selection = Object.values(setup.drawn)
     .flat()
     .map((c) => c.id);
+  if (game.musical) {
+    // Extra Townsfolk for the chairs the evil players sit on.
+    const evil = game.selection.filter((id) => !isGoodTeam(getCharacter(id).team)).length;
+    const extra = pickUnused(
+      scriptRoleIds(script).filter((id) => getCharacter(id).team === "townsfolk" && !MUSICAL_AVOID.includes(id)),
+      new Set(game.selection),
+      evil
+    );
+    game.selection.push(...extra);
+  }
   saveGame();
   renderGameSetup();
 }
@@ -344,18 +410,35 @@ function rollBluffs() {
 
 function startDealing() {
   const script = gameScript();
-  if (!script || game.selection.length !== selectedPlayers) return;
+  if (!script) return;
 
   const used = new Set([...game.selection, ...Object.values(game.disguises)]);
+  const disguiseFor = (role) => {
+    if (!DISGUISES[role]) return null;
+    const shownAs = game.disguises[role] || shuffle(disguiseCandidates(role, used))[0] || null;
+    if (shownAs) used.add(shownAs);
+    return shownAs;
+  };
 
-  game.players = shuffle(game.selection).map((role) => {
-    let shownAs = null;
-    if (DISGUISES[role]) {
-      shownAs = game.disguises[role] || shuffle(disguiseCandidates(role, used))[0] || null;
-      if (shownAs) used.add(shownAs);
-    }
-    return makePlayer(role, { shownAs });
-  });
+  if (game.musical) {
+    const evil = game.selection.filter((id) => !isGoodTeam(getCharacter(id).team));
+    const good = game.selection.filter((id) => isGoodTeam(getCharacter(id).team));
+    if (good.length !== selectedPlayers || !evil.length || evil.length >= good.length) return;
+    game.chairs = shuffle(good).map((role) => ({ role, shownAs: disguiseFor(role), used: false, note: "" }));
+    const evilSeats = shuffle(game.chairs.map((_, i) => i)).slice(0, evil.length);
+    const evilRoles = shuffle(evil);
+    game.players = game.chairs.map((chair, i) => {
+      const k = evilSeats.indexOf(i);
+      return k >= 0
+        ? makePlayer(evilRoles[k], { shownAs: disguiseFor(evilRoles[k]), carried: true })
+        : makePlayer(chair.role, { shownAs: chair.shownAs });
+    });
+    game.rounds = [];
+  } else {
+    if (game.selection.length !== selectedPlayers) return;
+    game.chairs = [];
+    game.players = shuffle(game.selection).map((role) => makePlayer(role, { shownAs: disguiseFor(role) }));
+  }
   rollBluffs();
   game.phase = "deal";
   grimoireOpen = false;
@@ -369,16 +452,27 @@ function renderDeal() {
   const grid = document.getElementById("deal-grid");
   const progress = document.getElementById("deal-progress");
   const taken = game.players.filter((p) => p.taken).length;
-  progress.textContent = `${taken} of ${game.players.length} cards taken`;
+  const toPeek = game.players.filter((p) => p.taken && !p.peeked).length;
+  progress.textContent =
+    taken < game.players.length
+      ? `${taken} of ${game.players.length} cards taken`
+      : toPeek
+        ? `🎵 ${toPeek} player${toPeek === 1 ? "" : "s"} still need to check their new chair`
+        : `All ${taken} cards taken`;
+  document.getElementById("deal-lead").textContent = game.musical
+    ? "Musical Chairs: card numbers are chair numbers. Sit in your chair's seat, tap your card and check your character in secret."
+    : "Pass the phone round. Each player taps a card, enters their name and checks their character in secret.";
 
   grid.innerHTML = game.players
-    .map(
-      (p, i) => `
-      <button type="button" class="deal-card${p.taken ? " taken" : ""}" data-seat="${i}">
+    .map((p, i) => {
+      const fresh = p.taken && !p.peeked;
+      const label = !p.taken ? "Tap to draw" : fresh ? `${escapeHtml(p.name)}<br>🎵 Check your chair` : escapeHtml(p.name);
+      return `
+      <button type="button" class="deal-card${p.taken ? " taken" : ""}${fresh ? " fresh" : ""}${p.dead ? " dead" : ""}" data-seat="${i}">
         <span class="deal-card-num">${i + 1}</span>
-        <span class="deal-card-name">${p.taken ? escapeHtml(p.name) : "Tap to draw"}</span>
-      </button>`
-    )
+        <span class="deal-card-name">${label}</span>
+      </button>`;
+    })
     .join("");
 
   grid.querySelectorAll(".deal-card").forEach((btn) => {
@@ -390,7 +484,7 @@ function openDealCard(seat) {
   dealCard = seat;
   const p = game.players[seat];
   const modal = document.getElementById("deal-modal");
-  document.getElementById("deal-card-title").textContent = `Card ${seat + 1}`;
+  document.getElementById("deal-card-title").textContent = `${game.musical && game.chairs[seat] ? "Chair" : "Card"} ${seat + 1}`;
   const nameInput = document.getElementById("deal-name");
   nameInput.value = p.name || "";
 
@@ -423,8 +517,24 @@ function revealDealCard() {
     p.taken = true;
     saveGame();
   }
+  p.peeked = true;
+  saveGame();
   const shown = getCharacter(p.shownAs || p.role);
   const side = teamSide(shown.team);
+  const chairEl = document.getElementById("deal-reveal-chair");
+  const chair = game.musical ? game.chairs[dealCard] : null;
+  if (chair && p.carried) {
+    const bluff = getCharacter(chair.shownAs || chair.role);
+    chairEl.innerHTML = `🎵 You keep your character when you change chairs. Chair ${dealCard + 1} holds the <strong>${escapeHtml(
+      bluff.name
+    )}</strong>, which does nothing while you sit on it, so you can claim it.`;
+    chairEl.hidden = false;
+  } else if (chair) {
+    chairEl.textContent = `🎵 This is chair ${dealCard + 1}'s character. When you change chairs, you become the new chair's character.`;
+    chairEl.hidden = false;
+  } else {
+    chairEl.hidden = true;
+  }
   document.getElementById("deal-reveal-hello").textContent = `${p.name}, you are the`;
   document.getElementById("deal-reveal-role").textContent = shown.name;
   const teamEl = document.getElementById("deal-reveal-team");
@@ -457,7 +567,7 @@ function renderGame() {
 
 function backToSetup() {
   if (!confirm("Go back to character selection? Everyone's cards will be cleared.")) return;
-  game = newGame(game.script, game.selection);
+  game = newGame(game.script, game.selection, game.musical);
   grimoireOpen = false;
   saveGame();
   renderGame();
@@ -465,7 +575,7 @@ function backToSetup() {
 
 function newGameFromScratch() {
   if (!confirm("Start a new game? The current grimoire will be cleared.")) return;
-  game = newGame(game.script, []);
+  game = newGame(game.script, [], game.musical);
   grimoireOpen = false;
   saveGame();
   renderGame();
@@ -478,7 +588,7 @@ function useDrawnSetupForGame() {
   const ids = Object.values(lastDrawnSetup.drawn)
     .flat()
     .map((c) => c.id);
-  game = newGame(activeScript.file, ids);
+  game = newGame(activeScript.file, ids, game.musical);
   grimoireOpen = false;
   saveGame();
   closeScriptModal();
